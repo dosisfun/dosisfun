@@ -1,25 +1,25 @@
 use super::drug_type::{DrugType, DrugRarity};
 
-#[derive(Copy, Drop, Serde, Debug, PartialEq)]
+#[derive(Copy, Drop, Serde, Debug, PartialEq, Introspect)]
 pub struct Ingredient {
     pub name: felt252,
     pub quantity: u32,
     pub purity: u8, // 0-100
 }
 
-#[derive(Copy, Drop, Serde, Debug, PartialEq)]
+#[derive(Copy, Drop, Serde, Debug, PartialEq, Introspect)]
 pub struct Recipe {
     pub id: u32,
     pub name: felt252,
     pub drug_type: DrugType,
     pub rarity: DrugRarity,
-    pub ingredients: Array<Ingredient>,
+    pub ingredients: Span<Ingredient>,
     pub difficulty: u8, // 1-10
     pub base_experience: u16,
     pub success_rate: u8, // 0-100
 }
 
-#[derive(Copy, Drop, Serde, Debug, PartialEq)]
+#[derive(Copy, Drop, Serde, Debug, PartialEq, Introspect)]
 pub enum CraftingResult {
     Success,
     Failure,
@@ -52,13 +52,14 @@ mod tests {
             quantity: 5,
             purity: 90,
         });
+        let ingredients_span = ingredients.span();
         
         let recipe = Recipe {
             id: 1,
             name: 'cocaine_basic',
             drug_type: DrugType::Stimulant,
             rarity: DrugRarity::Common,
-            ingredients,
+            ingredients: ingredients_span,
             difficulty: 3,
             base_experience: 50,
             success_rate: 70,

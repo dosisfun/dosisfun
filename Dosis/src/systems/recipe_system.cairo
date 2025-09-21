@@ -1,8 +1,8 @@
 use dosis_game::models::recipe::{Recipe, RecipeAssert};
 use dosis_game::types::drug_type::{DrugType, DrugRarity};
-use dosis_game::types::recipe::{Ingredient, Recipe as RecipeType};
+use dosis_game::types::recipe::Ingredient;
 use dosis_game::store::StoreTrait;
-use starknet::{get_caller_address};
+use starknet::get_caller_address;
 
 #[starknet::interface]
 pub trait IRecipeSystem<T> {
@@ -26,8 +26,6 @@ pub trait IRecipeSystem<T> {
 pub mod recipe_system {
     use super::{Recipe, RecipeAssert, DrugType, DrugRarity, Ingredient, StoreTrait, IRecipeSystem};
     use starknet::get_caller_address;
-    use dojo::model::{ModelStorage};
-    use dojo::world::{WorldStorage, WorldStorageTrait};
 
     #[storage]
     struct Storage {
@@ -39,7 +37,7 @@ pub mod recipe_system {
         self.recipe_counter.write(1);
         
         // Initialize some default recipes
-        self.initialize_default_recipes();
+        initialize_default_recipes(ref self);
     }
 
     #[abi(embed_v0)]
@@ -60,12 +58,15 @@ pub mod recipe_system {
             let recipe_id = self.recipe_counter.read();
             self.recipe_counter.write(recipe_id + 1);
 
+            // Validate difficulty range
+            assert(difficulty >= dosis_game::constants::MIN_RECIPE_DIFFICULTY && difficulty <= dosis_game::constants::MAX_RECIPE_DIFFICULTY, 'Invalid difficulty range');
+
             let recipe = Recipe {
                 id: recipe_id.try_into().unwrap(),
                 name,
                 drug_type,
                 rarity,
-                ingredients,
+                ingredients: ingredients.span(),
                 difficulty,
                 base_experience,
                 success_rate,
@@ -142,7 +143,7 @@ pub mod recipe_system {
             name: 'cocaine_basic',
             drug_type: DrugType::Stimulant,
             rarity: DrugRarity::Common,
-            ingredients: cocaine_ingredients,
+            ingredients: cocaine_ingredients.span(),
             difficulty: 3,
             base_experience: 50,
             success_rate: 70,
@@ -168,7 +169,7 @@ pub mod recipe_system {
             name: 'heroin_pure',
             drug_type: DrugType::Opioid,
             rarity: DrugRarity::Rare,
-            ingredients: heroin_ingredients,
+            ingredients: heroin_ingredients.span(),
             difficulty: 7,
             base_experience: 150,
             success_rate: 45,
@@ -194,7 +195,7 @@ pub mod recipe_system {
             name: 'lsd_tabs',
             drug_type: DrugType::Hallucinogen,
             rarity: DrugRarity::Epic,
-            ingredients: lsd_ingredients,
+            ingredients: lsd_ingredients.span(),
             difficulty: 9,
             base_experience: 300,
             success_rate: 25,

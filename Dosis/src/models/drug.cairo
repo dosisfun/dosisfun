@@ -1,5 +1,6 @@
 use dosis_game::types::drug_type::{DrugType, DrugRarity, DrugState};
 use starknet::ContractAddress;
+use core::num::traits::zero::Zero;
 
 #[derive(Copy, Drop, Serde, Debug, PartialEq)]
 #[dojo::model]
@@ -22,7 +23,7 @@ pub struct Drug {
 pub struct DrugInventory {
     #[key]
     pub player: ContractAddress,
-    pub drug_ids: Array<u32>,
+    pub drug_ids: Span<u32>,
     pub total_drugs: u32,
 }
 
@@ -44,7 +45,7 @@ pub impl ZeroableDrugTrait of Zero<Drug> {
     fn zero() -> Drug {
         Drug {
             id: 0,
-            owner: contract_address_const::<0>(),
+            owner: starknet::contract_address_const::<0>(),
             name: '',
             drug_type: DrugType::Stimulant,
             rarity: DrugRarity::Common,

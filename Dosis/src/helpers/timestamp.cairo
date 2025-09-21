@@ -1,7 +1,7 @@
 // Core imports
 
 // Constants imports
-use combat_game::constants;
+use dosis_game::constants;
 use core::traits::TryInto;
 
 #[generate_trait]

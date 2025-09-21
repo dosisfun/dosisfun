@@ -1,4 +1,4 @@
-mod constants;
+pub mod constants;
 mod store;
 
 mod models {
@@ -27,7 +27,6 @@ mod helpers {
 pub mod utils {
     pub mod string;
 }
-
 
 pub mod tests {
     mod test_player;

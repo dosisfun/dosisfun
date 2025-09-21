@@ -1,4 +1,4 @@
-#[derive(Copy, Drop, Serde, Debug, PartialEq)]
+#[derive(Copy, Drop, Serde, Debug, PartialEq, Introspect)]
 pub enum DrugType {
     Stimulant,
     Depressant,
@@ -8,7 +8,7 @@ pub enum DrugType {
     Synthetic,
 }
 
-#[derive(Copy, Drop, Serde, Debug, PartialEq)]
+#[derive(Copy, Drop, Serde, Debug, PartialEq, Introspect)]
 pub enum DrugRarity {
     Common,
     Uncommon,
@@ -17,7 +17,7 @@ pub enum DrugRarity {
     Legendary,
 }
 
-#[derive(Copy, Drop, Serde, Debug, PartialEq)]
+#[derive(Copy, Drop, Serde, Debug, PartialEq, Introspect)]
 pub enum DrugState {
     Raw,
     Processing,

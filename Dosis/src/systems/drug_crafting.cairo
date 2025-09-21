@@ -1,7 +1,7 @@
 use dosis_game::models::player::{Player, PlayerAssert};
 use dosis_game::models::drug::{Drug, DrugAssert, DrugInventory};
-use dosis_game::types::drug_type::{DrugType, DrugRarity, DrugState};
-use dosis_game::types::recipe::{Recipe as RecipeType, CraftingResult};
+use dosis_game::types::drug_type::{DrugRarity, DrugState};
+use dosis_game::types::recipe::CraftingResult;
 use dosis_game::models::recipe::{Recipe, RecipeAssert};
 use dosis_game::helpers::experience_utils::ExperienceCalculator;
 use dosis_game::store::StoreTrait;
@@ -20,12 +20,10 @@ pub trait IDrugCrafting<T> {
 pub mod drug_crafting_system {
     use super::{
         Player, PlayerAssert, Drug, DrugAssert, DrugInventory, 
-        DrugType, DrugRarity, DrugState, Recipe, CraftingResult,
+        DrugRarity, DrugState, Recipe, CraftingResult,
         ExperienceCalculator, StoreTrait, IDrugCrafting
     };
     use starknet::{get_caller_address, get_block_timestamp};
-    use dojo::model::{ModelStorage};
-    use dojo::world::{WorldStorage, WorldStorageTrait};
 
     #[storage]
     struct Storage {
@@ -66,7 +64,7 @@ pub mod drug_crafting_system {
             let mut drug_ids = ArrayTrait::new();
             let inventory = DrugInventory {
                 player: get_caller_address(),
-                drug_ids,
+                drug_ids: drug_ids.span(),
                 total_drugs: 0,
             };
             store.write_drug_inventory(inventory);
@@ -81,7 +79,11 @@ pub mod drug_crafting_system {
 
             // Get recipe from storage
             let recipe = store.read_recipe(recipe_id);
-            recipe.assert_exists();
+            assert(recipe.id > 0, 'Recipe does not exist');
+            
+            // Validate recipe difficulty
+            assert(recipe.difficulty >= dosis_game::constants::MIN_RECIPE_DIFFICULTY, 'Recipe difficulty too low');
+            assert(recipe.difficulty <= dosis_game::constants::MAX_RECIPE_DIFFICULTY, 'Recipe difficulty too high');
             
             // Calculate crafting success based on player level and recipe difficulty
             let success_rate = calculate_success_rate(player.level, recipe.difficulty);
@@ -120,20 +122,17 @@ pub mod drug_crafting_system {
                             player.level - 1, player.experience
                         );
                         // Award reputation for leveling up
-                        player.reputation += 10;
+                        player.reputation += dosis_game::constants::LEVEL_UP_REPUTATION_BONUS.into();
                     }
 
                     // Award reputation based on drug quality
-                    player.reputation += calculate_reputation_gain(drug.rarity, drug.purity);
+                    player.reputation += calculate_reputation_gain(drug.rarity, drug.purity).into();
 
                     store.write_drug(drug);
                     store.write_player(player);
 
-                    // Update inventory
-                    let mut inventory = store.read_drug_inventory();
-                    inventory.drug_ids.append(drug_id.try_into().unwrap());
-                    inventory.total_drugs += 1;
-                    store.write_drug_inventory(inventory);
+            // Update inventory
+            store.add_drug_to_inventory(drug_id.try_into().unwrap());
 
                     drug_id.try_into().unwrap()
                 },
@@ -181,20 +180,25 @@ pub mod drug_crafting_system {
             let mut world = self.world(@"dosis_game");
             let mut store = StoreTrait::new(world);
 
-            let inventory = store.read_drug_inventory();
-            inventory.drug_ids
+            store.get_player_drugs()
         }
     }
 
     // Helper functions
 
     fn calculate_success_rate(player_level: u8, recipe_difficulty: u8) -> u8 {
-        let base_rate = 50;
+        let base_rate = dosis_game::constants::BASE_SUCCESS_RATE;
         let level_bonus = player_level * 5;
         let difficulty_penalty = recipe_difficulty * 3;
         
         let rate = base_rate + level_bonus - difficulty_penalty;
-        if rate > 95 { 95 } else if rate < 5 { 5 } else { rate }
+        if rate > dosis_game::constants::MAX_SUCCESS_RATE { 
+            dosis_game::constants::MAX_SUCCESS_RATE 
+        } else if rate < dosis_game::constants::MIN_SUCCESS_RATE { 
+            dosis_game::constants::MIN_SUCCESS_RATE 
+        } else { 
+            rate 
+        }
     }
 
     fn simulate_crafting(success_rate: u8) -> CraftingResult {
@@ -205,9 +209,9 @@ pub mod drug_crafting_system {
             CraftingResult::CriticalFailure
         } else if random_value < 5 {
             CraftingResult::Failure
-        } else if random_value < success_rate {
+        } else if random_value < success_rate.into() {
             CraftingResult::Success
-        } else if random_value < success_rate + 5 {
+        } else if random_value < (success_rate + 5).into() {
             CraftingResult::CriticalSuccess
         } else {
             CraftingResult::Failure
@@ -215,11 +219,20 @@ pub mod drug_crafting_system {
     }
 
     fn calculate_purity(result: CraftingResult, difficulty: u8) -> u8 {
-        match result {
+        let base_purity = match result {
             CraftingResult::CriticalSuccess => 95 + (difficulty * 2),
             CraftingResult::Success => 70 + difficulty,
             CraftingResult::Failure => 30 + difficulty,
             CraftingResult::CriticalFailure => 10,
+        };
+        
+        // Ensure purity is within valid bounds
+        if base_purity > dosis_game::constants::MAX_PURITY {
+            dosis_game::constants::MAX_PURITY
+        } else if base_purity < dosis_game::constants::MIN_PURITY {
+            dosis_game::constants::MIN_PURITY
+        } else {
+            base_purity
         }
     }
 
@@ -228,23 +241,23 @@ pub mod drug_crafting_system {
         let level_penalty = player_level * 2; // Higher level players get less exp
         
         match result {
-            CraftingResult::CriticalSuccess => base_exp * 2 - level_penalty,
-            CraftingResult::Success => base_exp - level_penalty,
+            CraftingResult::CriticalSuccess => base_exp * 2 - level_penalty.into(),
+            CraftingResult::Success => base_exp - level_penalty.into(),
             CraftingResult::Failure => base_exp / 4,
             CraftingResult::CriticalFailure => 1,
         }
     }
 
-    fn calculate_reputation_gain(rarity: DrugRarity, purity: u8) -> u16 {
+    fn calculate_reputation_gain(rarity: DrugRarity, purity: u8) -> u8 {
         let rarity_multiplier = match rarity {
-            DrugRarity::Common => 1,
-            DrugRarity::Uncommon => 2,
-            DrugRarity::Rare => 5,
-            DrugRarity::Epic => 10,
-            DrugRarity::Legendary => 25,
+            DrugRarity::Common => dosis_game::constants::COMMON_RARITY_MULTIPLIER,
+            DrugRarity::Uncommon => dosis_game::constants::UNCOMMON_RARITY_MULTIPLIER,
+            DrugRarity::Rare => dosis_game::constants::RARE_RARITY_MULTIPLIER,
+            DrugRarity::Epic => dosis_game::constants::EPIC_RARITY_MULTIPLIER,
+            DrugRarity::Legendary => dosis_game::constants::LEGENDARY_RARITY_MULTIPLIER,
         };
         
-        let purity_bonus = purity / 10;
-        rarity_multiplier + purity_bonus
+        let purity_bonus = purity / 10; // 0-10 bonus based on purity
+        dosis_game::constants::BASE_REPUTATION_GAIN * rarity_multiplier + purity_bonus
     }
 }

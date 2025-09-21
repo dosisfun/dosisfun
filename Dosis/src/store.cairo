@@ -98,7 +98,12 @@ pub impl StoreImpl of StoreTrait {
 
     fn add_drug_to_inventory(ref self: Store, drug_id: u32) {
         let mut inventory = self.read_drug_inventory();
-        inventory.drug_ids.append(drug_id);
+        let mut drug_ids_array = ArrayTrait::new();
+        for id in inventory.drug_ids {
+            drug_ids_array.append(*id);
+        };
+        drug_ids_array.append(drug_id);
+        inventory.drug_ids = drug_ids_array.span();
         inventory.total_drugs += 1;
         self.write_drug_inventory(inventory);
     }
@@ -108,19 +113,23 @@ pub impl StoreImpl of StoreTrait {
         let mut new_drug_ids = ArrayTrait::new();
         
         for drug_id_item in inventory.drug_ids {
-            if drug_id_item != drug_id {
-                new_drug_ids.append(drug_id_item);
+            if *drug_id_item != drug_id {
+                new_drug_ids.append(*drug_id_item);
             }
-        }
+        };
         
-        inventory.drug_ids = new_drug_ids;
+        inventory.drug_ids = new_drug_ids.span();
         inventory.total_drugs -= 1;
         self.write_drug_inventory(inventory);
     }
 
     fn get_player_drugs(self: @Store) -> Array<u32> {
         let inventory = self.read_drug_inventory();
-        inventory.drug_ids
+        let mut drug_ids_array = ArrayTrait::new();
+        for id in inventory.drug_ids {
+            drug_ids_array.append(*id);
+        };
+        drug_ids_array
     }
 
     fn get_player_stats(self: @Store) -> (u8, u16, u32, u32, u32, u16) {

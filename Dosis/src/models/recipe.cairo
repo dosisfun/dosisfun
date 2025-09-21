@@ -1,5 +1,6 @@
 use dosis_game::types::drug_type::{DrugType, DrugRarity};
-use dosis_game::types::recipe::{Ingredient, Recipe as RecipeType};
+use dosis_game::types::recipe::Ingredient;
+use core::num::traits::zero::Zero;
 
 #[derive(Copy, Drop, Serde, Debug, PartialEq)]
 #[dojo::model]
@@ -9,7 +10,7 @@ pub struct Recipe {
     pub name: felt252,
     pub drug_type: DrugType,
     pub rarity: DrugRarity,
-    pub ingredients: Array<Ingredient>,
+    pub ingredients: Span<Ingredient>,
     pub difficulty: u8, // 1-10
     pub base_experience: u16,
     pub success_rate: u8, // 0-100
@@ -33,7 +34,7 @@ pub impl RecipeAssert of AssertTrait {
 pub impl ZeroableRecipeTrait of Zero<Recipe> {
     #[inline(always)]
     fn zero() -> Recipe {
-        let mut empty_ingredients = ArrayTrait::new();
+        let empty_ingredients = ArrayTrait::new().span();
         Recipe {
             id: 0,
             name: '',
@@ -71,13 +72,14 @@ mod tests {
             quantity: 5,
             purity: 90,
         });
+        let ingredients_span = ingredients.span();
         
         let recipe = Recipe {
             id: 1,
             name: 'cocaine_basic',
             drug_type: DrugType::Stimulant,
             rarity: DrugRarity::Common,
-            ingredients,
+            ingredients: ingredients_span,
             difficulty: 3,
             base_experience: 50,
             success_rate: 70,
