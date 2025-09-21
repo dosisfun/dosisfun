@@ -2,7 +2,6 @@ use dosis_game::models::recipe::{Recipe, RecipeAssert};
 use dosis_game::types::drug_type::{DrugType, DrugRarity};
 use dosis_game::types::recipe::Ingredient;
 use dosis_game::store::StoreTrait;
-use starknet::get_caller_address;
 
 #[starknet::interface]
 pub trait IRecipeSystem<T> {
@@ -88,12 +87,20 @@ pub mod recipe_system {
         }
 
         fn get_all_recipes(ref self: ContractState) -> Array<u32> {
-            // In a real implementation, this would query all recipes
-            // For now, return the default recipe IDs
             let mut recipe_ids = ArrayTrait::new();
-            recipe_ids.append(1);
-            recipe_ids.append(2);
-            recipe_ids.append(3);
+            let counter = self.recipe_counter.read();
+            
+            // Get all recipe IDs from 1 to counter
+            let max_recipes: u32 = counter.try_into().unwrap_or(1000); // Cap at 1000 for safety
+            let mut i: u32 = 1;
+            loop {
+                if i > max_recipes {
+                    break;
+                }
+                recipe_ids.append(i);
+                i += 1;
+            };
+            
             recipe_ids
         }
 

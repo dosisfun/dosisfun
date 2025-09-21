@@ -30,4 +30,8 @@ pub mod utils {
 
 pub mod tests {
     mod test_player;
+    mod test_drug;
+    mod test_recipe;
+    mod test_drug_crafting;
+    mod test_recipe_system;
 }

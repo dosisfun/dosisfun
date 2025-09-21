@@ -5,7 +5,6 @@ use dosis_game::types::recipe::CraftingResult;
 use dosis_game::models::recipe::{Recipe, RecipeAssert};
 use dosis_game::helpers::experience_utils::ExperienceCalculator;
 use dosis_game::store::StoreTrait;
-use starknet::{get_caller_address, get_block_timestamp};
 
 #[starknet::interface]
 pub trait IDrugCrafting<T> {
