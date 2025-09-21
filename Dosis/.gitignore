@@ -41,3 +41,8 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Dojo
+target
+# dojo_mainnet.toml
+# dojo_sepolia.toml
