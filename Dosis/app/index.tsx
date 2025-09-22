@@ -4,38 +4,66 @@ import { router } from 'expo-router';
 import { useAegis } from '@cavos/aegis';
 import { getPrivateKey, storePrivateKey } from '../utils/secureStorage';
 import * as Font from 'expo-font';
+import { useFonts, PixelifySans_400Regular } from '@expo-google-fonts/pixelify-sans';
 import * as Clipboard from 'expo-clipboard';
+import { Asset } from 'expo-asset';
 
 const { width, height } = Dimensions.get('window');
 
 export default function Index() {
   const { deployWallet, connectWallet, aegisAccount } = useAegis();
   const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [progress, setProgress] = useState(0);
   const [addressCopied, setAddressCopied] = useState(false);
   const [walletAddress, setWalletAddress] = useState('0x06S...oF2');
   const [isLoading, setIsLoading] = useState(true);
 
+  const [googleFontsLoaded] = useFonts({
+    PixelifySans_400Regular,
+  });
+
   useEffect(() => {
     loadFonts();
+    preloadAssets();
   }, []);
 
   useEffect(() => {
-    if (fontsLoaded) {
+    if (fontsLoaded && assetsLoaded) {
       startWalletConnection();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, assetsLoaded]);
 
   const loadFonts = async () => {
     try {
       await Font.loadAsync({
         'RamaGothicBold': require('../assets/fonts/ramagothicbold.ttf'),
-        'PixelifySans-Regular': require('../assets/fonts/PixelifySans-Regular.ttf'),
       });
       setFontsLoaded(true);
     } catch (error) {
       console.error('Error loading fonts:', error);
       setFontsLoaded(true);
+    }
+  };
+
+  const preloadAssets = async () => {
+    try {
+      const imageAssets = [
+        require('../assets/images/logo.png'),
+        require('../assets/images/token.png'),
+        require('../assets/images/cassette.png'),
+      ];
+
+      const cacheImages = imageAssets.map(image => {
+        return Asset.fromModule(image).downloadAsync();
+      });
+
+      await Promise.all(cacheImages);
+      setAssetsLoaded(true);
+      console.log('All assets preloaded successfully');
+    } catch (error) {
+      console.error('Error preloading assets:', error);
+      setAssetsLoaded(true); // Continue even if preloading fails
     }
   };
 
@@ -69,27 +97,15 @@ export default function Index() {
 
       setTimeout(() => {
         setIsLoading(false);
-        // router.replace('/nft-validation');
+        router.replace('/nft-validation');
       }, 4000);
 
     } catch (error) {
       console.error('Wallet connection error:', error);
       setTimeout(() => {
         setIsLoading(false);
-        // router.replace('/nft-validation');
+        router.replace('/nft-validation');
       }, 4000);
-    }
-  };
-
-  const copyAddressToClipboard = async () => {
-    try {
-      await Clipboard.setStringAsync(walletAddress);
-      setAddressCopied(true);
-      setTimeout(() => {
-        setAddressCopied(false);
-      }, 2000);
-    } catch (error) {
-      console.error('Error copying to clipboard:', error);
     }
   };
 
@@ -102,8 +118,6 @@ export default function Index() {
         alignItems: 'center',
         paddingHorizontal: 40,
       }}>
-        <StatusBar hidden />
-
         {/* Title */}
         <Text style={{
           fontSize: 48,
@@ -171,110 +185,4 @@ export default function Index() {
       </View>
     );
   }
-
-  return (
-    <View style={{
-      flex: 1,
-      backgroundColor: '#000000',
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: 40,
-    }}>
-      <StatusBar hidden />
-
-      {/* Cassette Image */}
-      <Image
-        source={require('../assets/images/cassette.png')}
-        style={{
-          width: 200,
-          height: 200,
-          marginBottom: 40,
-        }}
-        resizeMode="contain"
-      />
-
-      {/* Main Text */}
-      <Text style={{
-        fontSize: 18,
-        color: '#FFFFFF',
-        fontFamily: fontsLoaded ? 'PixelifySans-Regular' : 'System',
-        textAlign: 'center',
-        marginBottom: 30,
-        lineHeight: 24,
-      }}>
-        SEND A CHARACTER NFT HERE TO CONTINUE...
-      </Text>
-
-      {/* Address with Copy Button */}
-      <TouchableOpacity
-        onPress={copyAddressToClipboard}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          paddingHorizontal: 20,
-          paddingVertical: 12,
-          borderRadius: 8,
-        }}
-      >
-        <Text style={{
-          fontSize: 16,
-          color: '#D301F2',
-          fontFamily: fontsLoaded ? 'PixelifySans-Regular' : 'System',
-          marginRight: 10,
-        }}>
-          {walletAddress}
-        </Text>
-        <Text style={{
-          fontSize: 16,
-          color: '#D301F2',
-          fontFamily: fontsLoaded ? 'PixelifySans-Regular' : 'System',
-        }}>
-          ⧉
-        </Text>
-      </TouchableOpacity>
-
-      {/* Copy Notification */}
-      {addressCopied && (
-        <View style={{
-          position: 'absolute',
-          top: '45%',
-          left: '50%',
-          transform: [{ translateX: -152 }, { translateY: -14 }],
-          backgroundColor: '#1F1F1F',
-          paddingHorizontal: 20,
-          paddingVertical: 6,
-          borderRadius: 8,
-          width: 305,
-          height: 28,
-        }}>
-          <Text style={{
-            fontSize: 12,
-            color: '#FFFFFF',
-            fontFamily: fontsLoaded ? 'PixelifySans-Regular' : 'System',
-            textAlign: 'center',
-            lineHeight: 16,
-          }}>
-            ADDRESS COPIED TO CLIPBOARD
-          </Text>
-        </View>
-      )}
-
-      {/* Footer Text */}
-      <View style={{
-        position: 'absolute',
-        bottom: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-      }}>
-        <Text style={{
-          fontSize: 12,
-          color: 'rgba(255, 255, 255, 0.6)',
-          fontFamily: fontsLoaded ? 'PixelifySans-Regular' : 'System',
-        }}>
-          dosis.fun [mobile] / no nft found / copy
-        </Text>
-      </View>
-    </View>
-  );
 }

@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import { AegisProvider } from "@cavos/aegis"
+import { StatusBar } from "expo-status-bar";
 
 export default function RootLayout() {
   return (
@@ -11,6 +12,7 @@ export default function RootLayout() {
         paymasterApiKey: 'c37c52b7-ea5a-4426-8121-329a78354b0b',
       }}
     >
+      <StatusBar hidden/>
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="nft-validation" options={{ headerShown: false }} />
