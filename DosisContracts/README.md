@@ -193,26 +193,91 @@ enum CraftingResult {
 - `MAX_SUCCESS_RATE = 95` - Maximum success rate
 - `MIN_SUCCESS_RATE = 5` - Minimum success rate
 
-### Running Tests
-```bash
-sozo test
-```
-
-## Deployment
+## Installation
 
 ### Prerequisites
+- Rust (latest stable version)
 - Cairo 2.10.1
 - Dojo Engine v1.6.1
 - Starknet network access
 
-### Build
+### Installing Dojo Tools
+
+#### 1. Install Dojo CLI (dojoup)
 ```bash
-sozo build
+curl -L https://install.dojoengine.org | bash
+
+dojoup install
 ```
 
-### Deploy
+#### 2. Install Required Tools
+
+```bash
+# Install Katana
+asdf plugin add katana https://github.com/dojoengine/asdf-katana.git
+ 
+asdf install katana latest
+
+# Install Sozo
+asdf plugin add sozo https://github.com/dojoengine/asdf-sozo.git
+ 
+asdf install sozo latest
+
+# Install Torii
+asdf plugin add torii https://github.com/dojoengine/asdf-torii.git
+ 
+asdf install torii latest
+```
+
+#### 3. Verify Installation
+```bash
+katana --version
+sozo --version
+torii --version
+```
+
+## Development Setup
+
+### 1. Start Local Development Environment
+```bash
+# Start Katana (local Starknet node)
+katana --disable-fee
+
+# In another terminal, start Torii (indexer)
+torii --world (contract address world) --rpc-url http://localhost:5050
+```
+
+### 2. Testing
+```bash
+# Testing contract
+sozo test
+```
+
+
+### 3. Build and Deploy
+```bash
+# Build the project
+sozo build
+
+# Deploy to local Katana node
+sozo migrate --profile dev
+```
+
+## Deployment
+
+### Local Development
+```bash
+sozo migrate --profile dev
+```
+
+### Sepolia Testnet
 ```bash
 sozo migrate --profile sepolia
+```
+
+### Mainnet
+```bash
+sozo migrate --profile mainnet
 ```
 
 ## Technical Stack
