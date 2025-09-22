@@ -1,0 +1,13 @@
+[world]
+name = "Dosis"
+description = "Dosis Game."
+seed = "dosis_game"
+
+[namespace]
+default = "dosis_game"
+
+[env]
+rpc_url = "https://api.cartridge.gg/x/starknet/sepolia"
+
+[writers]
+"dosis_game" = ["dosis_game-game"]

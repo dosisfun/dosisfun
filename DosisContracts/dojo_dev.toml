@@ -1,0 +1,16 @@
+[world]
+name = "Dosis"
+description = "Dosis Game."
+seed = "dosis_game"
+
+[namespace]
+default = "dosis_game"
+
+[env]
+rpc_url = "http://localhost:5050/"
+account_address = ""
+private_key = ""
+world_address = ""
+
+[writers]
+"dosisgame" = ["dosis_game"]

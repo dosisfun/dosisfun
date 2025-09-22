@@ -1,0 +1,28 @@
+[world]
+name = "Dosis Game"
+seed = "prod-dosis-game"
+description = "Production deployment of Dosis Game"
+cover_uri = "ipfs://YourCoverHash"
+icon_uri = "ipfs://YourIconHash"
+website = "https://www.dosis.fun/"
+ 
+[env]
+rpc_url = "https://api.cartridge.gg/x/prod-dosis-game/katana"
+account_address = "0x127fd..."
+keystore_path = "~/.starknet_accounts/mainnet.json"
+ 
+[env.ipfs_config]
+url = "https://ipfs.infura.io:5001"
+username = "prod_username"
+password = "prod_password"
+ 
+[namespace]
+default = "dosis_game"
+mappings = { "items" = ["Drug", "Ingredient"] }
+ 
+[writers]
+"dosis_game" = ["dosis_game-actions"]
+"items" = ["dosis_game-actions", "dosis_game-item-manager"]
+ 
+[owners]
+"dosis_game" = ["dosis_game-admin"]
