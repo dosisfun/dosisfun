@@ -1,0 +1,18 @@
+# torii config for profile [mainnet]
+
+world_address = ""
+rpc = "https://api.cartridge.gg/x/starknet/mainnet"
+
+[events]
+raw = true
+
+[sql]
+historical = []
+
+[indexing]
+pending = true
+transactions = false
+world_block =     # Dosis mainnet deployment block
+contracts = [
+  "erc721: ", # Dosis NFT
+]

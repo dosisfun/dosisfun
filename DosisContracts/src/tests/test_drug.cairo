@@ -1,10 +1,10 @@
-use dosis_game::models::drug::{DrugAssert, DrugInventory, ZeroableDrugTrait};
-use dosis_game::types::drug_type::{DrugType, DrugRarity, DrugState};
+use dosis_game::models::drug::{DrugAssert, ZeroableDrugTrait};
 
 #[cfg(test)]
 mod tests {
-    use super::{DrugAssert, DrugInventory, ZeroableDrugTrait};
-    use super::{DrugType, DrugRarity, DrugState};
+    use super::{DrugAssert, ZeroableDrugTrait};
+    use dosis_game::models::drug::DrugInventory;
+    use dosis_game::types::drug_type::{DrugType, DrugRarity, DrugState};
 
     #[test]
     #[available_gas(20000000)]

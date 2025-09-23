@@ -1,5 +1,5 @@
-use dosis_game::models::player::{Player, PlayerAssert};
-use dosis_game::models::drug::{Drug, DrugAssert, DrugInventory};
+use dosis_game::models::nft::{PlayerNFT, PlayerNFTAssert, ZeroablePlayerNFTTrait};
+use dosis_game::models::drug::{Drug, DrugAssert};
 use dosis_game::types::drug_type::{DrugRarity, DrugState};
 use dosis_game::types::recipe::CraftingResult;
 use dosis_game::models::recipe::{Recipe, RecipeAssert};
@@ -8,8 +8,8 @@ use dosis_game::store::StoreTrait;
 
 #[starknet::interface]
 pub trait IDrugCrafting<T> {
-    fn spawn_player(ref self: T);
     fn craft_drug(ref self: T, recipe_id: u32, ingredients: Array<felt252>) -> u32;
+    fn get_player_character(ref self: T) -> PlayerNFT;
     fn get_player_stats(ref self: T) -> (u8, u16, u32, u32, u32, u16);
     fn get_drug(ref self: T, drug_id: u32) -> Drug;
     fn get_player_drugs(ref self: T) -> Array<u32>;
@@ -18,7 +18,7 @@ pub trait IDrugCrafting<T> {
 #[dojo::contract]
 pub mod drug_crafting_system {
     use super::{
-        Player, PlayerAssert, Drug, DrugAssert, DrugInventory, 
+        PlayerNFT, PlayerNFTAssert, ZeroablePlayerNFTTrait, Drug, DrugAssert, 
         DrugRarity, DrugState, Recipe, CraftingResult,
         ExperienceCalculator, StoreTrait, IDrugCrafting
     };
@@ -38,43 +38,21 @@ pub mod drug_crafting_system {
 
     #[abi(embed_v0)]
     impl DrugCraftingImpl of IDrugCrafting<ContractState> {
-        fn spawn_player(ref self: ContractState) {
+        fn get_player_character(ref self: ContractState) -> PlayerNFT {
             let mut world = self.world(@"dosis_game");
             let mut store = StoreTrait::new(world);
-
-            let found = store.read_player();
-            found.assert_not_exists();
-
-            let player = Player {
-                address: get_caller_address(),
-                level: 1,
-                experience: 0,
-                total_drugs_created: 0,
-                successful_crafts: 0,
-                failed_crafts: 0,
-                last_active_timestamp: get_block_timestamp(),
-                creation_timestamp: get_block_timestamp(),
-                reputation: 0,
-            };
-
-            store.write_player(player);
-
-            // Initialize drug inventory
-            let mut drug_ids = ArrayTrait::new();
-            let inventory = DrugInventory {
-                player: get_caller_address(),
-                drug_ids: drug_ids.span(),
-                total_drugs: 0,
-            };
-            store.write_drug_inventory(inventory);
+            let caller = get_caller_address();
+            
+            store.get_player_character_by_owner(caller)
         }
 
         fn craft_drug(ref self: ContractState, recipe_id: u32, ingredients: Array<felt252>) -> u32 {
             let mut world = self.world(@"dosis_game");
             let mut store = StoreTrait::new(world);
+            let caller = get_caller_address();
 
-            let mut player = store.read_player();
-            player.assert_exists();
+            let mut player_nft = store.get_player_character_by_owner(caller);
+            player_nft.assert_exists();
 
             // Get recipe from storage
             let recipe = store.read_recipe(recipe_id);
@@ -85,7 +63,7 @@ pub mod drug_crafting_system {
             assert(recipe.difficulty <= dosis_game::constants::MAX_RECIPE_DIFFICULTY, 'Recipe difficulty too high');
             
             // Calculate crafting success based on player level and recipe difficulty
-            let success_rate = calculate_success_rate(player.level, recipe.difficulty);
+            let success_rate = calculate_success_rate(player_nft.level, recipe.difficulty);
             let crafting_result = simulate_crafting(success_rate);
 
             let drug_id = self.drug_counter.read();
@@ -108,27 +86,27 @@ pub mod drug_crafting_system {
                     };
 
                     // Award experience
-                    let exp_gained = calculate_experience_gain(recipe, crafting_result, player.level);
-                    player.experience += exp_gained;
-                    player.total_drugs_created += 1;
-                    player.successful_crafts += 1;
-                    player.last_active_timestamp = get_block_timestamp();
+                    let exp_gained = calculate_experience_gain(recipe, crafting_result, player_nft.level);
+                    player_nft.experience += exp_gained;
+                    player_nft.total_drugs_created += 1;
+                    player_nft.successful_crafts += 1;
+                    player_nft.last_active_timestamp = get_block_timestamp();
 
                     // Check for level up
-                    if ExperienceCalculator::should_level_up(player.level, player.experience) {
-                        player.level += 1;
-                        player.experience = ExperienceCalculator::remaining_exp_after_level_up(
-                            player.level - 1, player.experience
+                    if ExperienceCalculator::should_level_up(player_nft.level, player_nft.experience) {
+                        player_nft.level += 1;
+                        player_nft.experience = ExperienceCalculator::remaining_exp_after_level_up(
+                            player_nft.level - 1, player_nft.experience
                         );
                         // Award reputation for leveling up
-                        player.reputation += dosis_game::constants::LEVEL_UP_REPUTATION_BONUS.into();
+                        player_nft.reputation += dosis_game::constants::LEVEL_UP_REPUTATION_BONUS.into();
                     }
 
                     // Award reputation based on drug quality
-                    player.reputation += calculate_reputation_gain(drug.rarity, drug.purity).into();
+                    player_nft.reputation += calculate_reputation_gain(drug.rarity, drug.purity).into();
 
                     store.write_drug(drug);
-                    store.write_player(player);
+                    store.write_player_nft(player_nft);
 
             // Update inventory
             store.add_drug_to_inventory(drug_id.try_into().unwrap());
@@ -137,13 +115,13 @@ pub mod drug_crafting_system {
                 },
                 CraftingResult::Failure | CraftingResult::CriticalFailure => {
                     // Failed crafting
-                    player.failed_crafts += 1;
-                    player.last_active_timestamp = get_block_timestamp();
+                    player_nft.failed_crafts += 1;
+                    player_nft.last_active_timestamp = get_block_timestamp();
                     
                     // Small experience gain even for failures
-                    player.experience += 1;
+                    player_nft.experience += 1;
                     
-                    store.write_player(player);
+                    store.write_player_nft(player_nft);
                     0 // Return 0 for failed crafting
                 }
             }
@@ -152,17 +130,18 @@ pub mod drug_crafting_system {
         fn get_player_stats(ref self: ContractState) -> (u8, u16, u32, u32, u32, u16) {
             let mut world = self.world(@"dosis_game");
             let mut store = StoreTrait::new(world);
+            let caller = get_caller_address();
 
-            let player = store.read_player();
-            player.assert_exists();
+            let player_nft = store.get_player_character_by_owner(caller);
+            player_nft.assert_exists();
 
             (
-                player.level,
-                player.experience,
-                player.total_drugs_created,
-                player.successful_crafts,
-                player.failed_crafts,
-                player.reputation
+                player_nft.level,
+                player_nft.experience,
+                player_nft.total_drugs_created,
+                player_nft.successful_crafts,
+                player_nft.failed_crafts,
+                player_nft.reputation
             )
         }
 

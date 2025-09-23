@@ -5,16 +5,20 @@ description = "Production deployment of Dosis Game"
 cover_uri = "ipfs://YourCoverHash"
 icon_uri = "ipfs://YourIconHash"
 website = "https://www.dosis.fun/"
+
+[world.socials]
+x = ""
+github = ""
+# discord = ""
+# telegram = ""
  
 [env]
-rpc_url = "https://api.cartridge.gg/x/prod-dosis-game/katana"
-account_address = "0x127fd..."
-keystore_path = "~/.starknet_accounts/mainnet.json"
- 
-[env.ipfs_config]
-url = "https://ipfs.infura.io:5001"
-username = "prod_username"
-password = "prod_password"
+chain_id = "SN_MAIN"
+rpc_url = "https://api.cartridge.gg/x/starknet/mainnet" # or env: STARKNET_RPC_URL
+# account_address = ""  # env: DOJO_ACCOUNT_ADDRESS
+# private_key = ""      # env: DOJO_PRIVATE_KEY
+world_address = "0x7774946aab21c0b2b2484aa9a6f03bb64fd33550bb2cc8b22d46922b49af17c"
+world_block = 2345258    # Dosis mainnet deployment block
  
 [namespace]
 default = "dosis_game"

@@ -1,6 +1,7 @@
 use dosis_game::models::player::{Player, PlayerAssert};
 use dosis_game::models::drug::{Drug, DrugAssert, DrugInventory};
 use dosis_game::models::recipe::{Recipe, RecipeAssert};
+use dosis_game::models::nft::{PlayerNFT, PlayerNFTAssert, ZeroablePlayerNFTTrait, NFTBalance, NFTApproval, NFTOperatorApproval, NFTTokenIndex, NFTOwnerTokenIndex, PlayerNFTCollection};
 use dosis_game::helpers::experience_utils::ExperienceCalculator;
 use dojo::model::ModelStorage;
 use dojo::world::WorldStorage;
@@ -142,5 +143,84 @@ pub impl StoreImpl of StoreTrait {
             player.failed_crafts,
             player.reputation
         )
+    }
+
+    // [ NFT Player Character methods ]
+    fn read_player_nft(self: @Store, token_id: u256) -> PlayerNFT {
+        self.world.read_model((token_id))
+    }
+
+    fn write_player_nft(ref self: Store, player_nft: PlayerNFT) {
+        self.world.write_model(@player_nft)
+    }
+
+    fn get_player_character_by_owner(self: @Store, owner: ContractAddress) -> PlayerNFT {
+        // Fast-path: no balance, no NFT
+        let balance = self.read_nft_balance(owner);
+        if balance.balance == 0 {
+            return ZeroablePlayerNFTTrait::zero();
+        }
+
+        // Use owner->index mapping (index 0) instead of linear scan
+        let owner_index = self.read_nft_owner_token_index(owner, 0);
+        if owner_index.token_id == 0 {
+            return ZeroablePlayerNFTTrait::zero();
+        }
+
+        self.read_player_nft(owner_index.token_id)
+    }
+
+    // [ NFT Balance methods ]
+    fn read_nft_balance(self: @Store, owner: ContractAddress) -> NFTBalance {
+        self.world.read_model((owner))
+    }
+
+    fn write_nft_balance(ref self: Store, balance: NFTBalance) {
+        self.world.write_model(@balance)
+    }
+
+    // [ NFT Approval methods ]
+    fn read_nft_approval(self: @Store, token_id: u256) -> NFTApproval {
+        self.world.read_model((token_id))
+    }
+
+    fn write_nft_approval(ref self: Store, approval: NFTApproval) {
+        self.world.write_model(@approval)
+    }
+
+    // [ NFT Operator Approval methods ]
+    fn read_nft_operator_approval(self: @Store, owner: ContractAddress, operator: ContractAddress) -> NFTOperatorApproval {
+        self.world.read_model((owner, operator))
+    }
+
+    fn write_nft_operator_approval(ref self: Store, operator_approval: NFTOperatorApproval) {
+        self.world.write_model(@operator_approval)
+    }
+
+    // [ NFT Token Index methods ]
+    fn read_nft_token_index(self: @Store, index: u256) -> NFTTokenIndex {
+        self.world.read_model((index))
+    }
+
+    fn write_nft_token_index(ref self: Store, token_index: NFTTokenIndex) {
+        self.world.write_model(@token_index)
+    }
+
+    // [ NFT Owner Token Index methods ]
+    fn read_nft_owner_token_index(self: @Store, owner: ContractAddress, index: u256) -> NFTOwnerTokenIndex {
+        self.world.read_model((owner, index))
+    }
+
+    fn write_nft_owner_token_index(ref self: Store, owner_token_index: NFTOwnerTokenIndex) {
+        self.world.write_model(@owner_token_index)
+    }
+
+    // [ NFT Collection methods ]
+    fn read_player_nft_collection(self: @Store) -> PlayerNFTCollection {
+        self.world.read_model((1)) // collection_id is always 1
+    }
+
+    fn write_player_nft_collection(ref self: Store, collection: PlayerNFTCollection) {
+        self.world.write_model(@collection)
     }
 }

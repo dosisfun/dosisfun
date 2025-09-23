@@ -1,16 +1,13 @@
 use dosis_game::models::player::{PlayerAssert};
 use dosis_game::models::drug::{DrugAssert};
 use dosis_game::models::recipe::{RecipeAssert};
-use dosis_game::types::drug_type::{DrugRarity};
-use dosis_game::types::recipe::{Ingredient, CraftingResult};
-use dosis_game::constants;
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        PlayerAssert, DrugAssert, RecipeAssert, DrugRarity, 
-        Ingredient, CraftingResult, constants
-    };
+    use super::{PlayerAssert, DrugAssert, RecipeAssert};
+    use dosis_game::types::drug_type::DrugRarity;
+    use dosis_game::types::recipe::{Ingredient, CraftingResult};
+    use dosis_game::constants;
 
     #[test]
     #[available_gas(20000000)]

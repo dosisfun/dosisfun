@@ -1,21 +1,23 @@
 pub mod constants;
-mod store;
+pub mod store;
 
-mod models {
+pub mod models {
     pub mod player;
     pub mod drug;
     pub mod recipe;
+    pub mod nft;
 }
 
-mod systems {
+pub mod systems {
     pub mod player;
     pub mod drug_crafting;
     pub mod recipe_system;
 }
 
-mod types {
+pub mod types {
     pub mod drug_type;
     pub mod recipe;
+    pub mod erc721;
 }
 
 mod helpers {

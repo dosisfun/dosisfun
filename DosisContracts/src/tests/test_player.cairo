@@ -1,9 +1,9 @@
 use dosis_game::models::player::{PlayerAssert, ZeroablePlayerTrait};
-use dosis_game::constants;
 
 #[cfg(test)]
 mod tests {
-    use super::{PlayerAssert, ZeroablePlayerTrait, constants};
+    use super::{PlayerAssert, ZeroablePlayerTrait};
+    use dosis_game::constants;
 
     #[test]
     #[available_gas(20000000)]
