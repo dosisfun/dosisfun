@@ -12,7 +12,7 @@ historical = []
 [indexing]
 pending = true
 transactions = false
-world_block =     # Astraea sepolia deployment block
+world_block =     # Dosis sepolia deployment block
 contracts = [
   "erc721: ", # Dosis NFT
 ]
