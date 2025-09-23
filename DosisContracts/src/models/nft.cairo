@@ -21,6 +21,26 @@ pub struct PlayerNFT {
     pub is_active: bool, // whether the character is currently active
 }
 
+/// User to Token ID mapping - tracks which token belongs to each user
+#[derive(Copy, Drop, Serde, Debug, PartialEq)]
+#[dojo::model]
+pub struct UserTokenMapping {
+    #[key]
+    pub user_address: ContractAddress,
+    pub token_id: u256,
+    pub is_primary: bool, // allows for multiple tokens per user in future
+}
+
+/// Token to User mapping - reverse lookup
+#[derive(Copy, Drop, Serde, Debug, PartialEq)]
+#[dojo::model]
+pub struct TokenOwnerMapping {
+    #[key]
+    pub token_id: u256,
+    pub owner_address: ContractAddress,
+    pub mint_timestamp: u64,
+}
+
 /// NFT Balance tracking for ERC721 compliance
 #[derive(Copy, Drop, Serde, Debug, PartialEq)]
 #[dojo::model]
@@ -118,7 +138,7 @@ pub impl ZeroablePlayerNFTTrait of Zero<PlayerNFT> {
     fn zero() -> PlayerNFT {
         PlayerNFT {
             token_id: 0,
-            owner: starknet::contract_address_const::<0>(),
+            owner: 0.try_into().unwrap(),
             character_name: '',
             level: 1,
             experience: 0,
@@ -147,11 +167,11 @@ pub impl ZeroablePlayerNFTTrait of Zero<PlayerNFT> {
 #[cfg(test)]
 mod tests {
     use super::{PlayerNFT, NFTBalance, NFTApproval, NFTOperatorApproval, ZeroablePlayerNFTTrait};
-    use starknet::{ContractAddress, contract_address_const};
+    use starknet::ContractAddress;
 
     #[test]
     fn test_player_nft_creation() {
-        let owner: ContractAddress = contract_address_const::<0x123>();
+        let owner: ContractAddress = 0x123.try_into().unwrap();
         
         let player_nft = PlayerNFT {
             token_id: 1,
@@ -192,7 +212,7 @@ mod tests {
 
     #[test]
     fn test_nft_balance_creation() {
-        let owner: ContractAddress = contract_address_const::<0x456>();
+        let owner: ContractAddress = 0x456.try_into().unwrap();
         
         let balance = NFTBalance {
             owner,
@@ -206,7 +226,7 @@ mod tests {
     #[test]
     fn test_nft_approval_creation() {
         let token_id: u256 = 1;
-        let approved: ContractAddress = contract_address_const::<0x789>();
+        let approved: ContractAddress = 0x789.try_into().unwrap();
         
         let approval = NFTApproval {
             token_id,
@@ -219,8 +239,8 @@ mod tests {
 
     #[test]
     fn test_nft_operator_approval_creation() {
-        let owner: ContractAddress = contract_address_const::<0x123>();
-        let operator: ContractAddress = contract_address_const::<0x456>();
+        let owner: ContractAddress = 0x123.try_into().unwrap();
+        let operator: ContractAddress = 0x456.try_into().unwrap();
         
         let operator_approval = NFTOperatorApproval {
             owner,

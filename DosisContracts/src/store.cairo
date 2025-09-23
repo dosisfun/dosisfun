@@ -1,21 +1,21 @@
 use dosis_game::models::player::{Player, PlayerAssert};
 use dosis_game::models::drug::{Drug, DrugAssert, DrugInventory};
 use dosis_game::models::recipe::{Recipe, RecipeAssert};
-use dosis_game::models::nft::{PlayerNFT, PlayerNFTAssert, ZeroablePlayerNFTTrait, NFTBalance, NFTApproval, NFTOperatorApproval, NFTTokenIndex, NFTOwnerTokenIndex, PlayerNFTCollection};
+use dosis_game::models::nft::{PlayerNFT, PlayerNFTAssert, ZeroablePlayerNFTTrait, UserTokenMapping, TokenOwnerMapping};
 use dosis_game::helpers::experience_utils::ExperienceCalculator;
 use dojo::model::ModelStorage;
 use dojo::world::WorldStorage;
-use starknet::ContractAddress;
+use starknet::{ContractAddress, get_block_timestamp};
 
 #[derive(Drop, Copy)]
-struct Store {
-    world: WorldStorage,
+pub struct Store {
+    pub world: WorldStorage,
 }
 
 #[generate_trait]
 pub impl StoreImpl of StoreTrait {
     fn new(world: WorldStorage) -> Store {
-        Store { world: world }
+        Store { world }
     }
 
     // [ Player methods ]
@@ -56,6 +56,101 @@ pub impl StoreImpl of StoreTrait {
 
     fn write_recipe(ref self: Store, recipe: Recipe) {
         self.world.write_model(@recipe)
+    }
+
+    // [ PlayerNFT methods ]
+    fn read_player_nft(self: @Store, token_id: u128) -> PlayerNFT {
+        self.world.read_model((token_id))
+    }
+
+    fn write_player_nft(ref self: Store, player_nft: PlayerNFT) {
+        self.world.write_model(@player_nft)
+    }
+
+    // Get player NFT by owner address using proper mapping
+    fn get_player_character_by_owner(self: @Store, owner: ContractAddress) -> PlayerNFT {
+        let token_id = self.get_user_primary_token_id(owner);
+        if token_id > 0 {
+            self.read_player_nft(token_id.low.try_into().unwrap())
+        } else {
+            ZeroablePlayerNFTTrait::zero()
+        }
+    }
+
+    // Get user's primary token_id using proper mapping
+    fn get_user_primary_token_id(self: @Store, user_address: ContractAddress) -> u256 {
+        let mapping: UserTokenMapping = self.world.read_model((user_address));
+        if mapping.is_primary {
+            mapping.token_id
+        } else {
+            0
+        }
+    }
+
+    // Set user's primary token when minting
+    fn set_user_primary_token(ref self: Store, user_address: ContractAddress, token_id: u256) {
+        let user_mapping = UserTokenMapping {
+            user_address,
+            token_id,
+            is_primary: true,
+        };
+        self.world.write_model(@user_mapping);
+
+        let token_mapping = TokenOwnerMapping {
+            token_id,
+            owner_address: user_address,
+            mint_timestamp: get_block_timestamp(),
+        };
+        self.world.write_model(@token_mapping);
+    }
+
+    // Get token owner using proper mapping
+    fn get_token_owner(self: @Store, token_id: u256) -> ContractAddress {
+        let mapping: TokenOwnerMapping = self.world.read_model((token_id));
+        mapping.owner_address
+    }
+
+    // Update token ownership (for transfers)
+    fn update_token_ownership(ref self: Store, token_id: u256, new_owner: ContractAddress) {
+        // Update token->owner mapping
+        let mut token_mapping: TokenOwnerMapping = self.world.read_model((token_id));
+        let old_owner = token_mapping.owner_address;
+        token_mapping.owner_address = new_owner;
+        self.world.write_model(@token_mapping);
+
+        // Clear old user's primary token if this was their primary
+        let old_user_mapping: UserTokenMapping = self.world.read_model((old_owner));
+        if old_user_mapping.token_id == token_id && old_user_mapping.is_primary {
+            let cleared_mapping = UserTokenMapping {
+                user_address: old_owner,
+                token_id: 0,
+                is_primary: false,
+            };
+            self.world.write_model(@cleared_mapping);
+        }
+
+        // Set as new user's primary token (assuming one token per user policy)
+        self.set_user_primary_token(new_owner, token_id);
+    }
+
+    // Clear user's token mapping (for burn)
+    fn clear_user_token_mapping(ref self: Store, user_address: ContractAddress) {
+        let cleared_mapping = UserTokenMapping {
+            user_address,
+            token_id: 0,
+            is_primary: false,
+        };
+        self.world.write_model(@cleared_mapping);
+    }
+
+    // Clear token owner mapping (for burn)
+    fn clear_token_owner_mapping(ref self: Store, token_id: u256) {
+        let cleared_mapping = TokenOwnerMapping {
+            token_id,
+            owner_address: 0.try_into().unwrap(), // ZERO_ADDRESS
+            mint_timestamp: 0,
+        };
+        self.world.write_model(@cleared_mapping);
     }
 
     // [ Game logic methods ]
@@ -143,84 +238,5 @@ pub impl StoreImpl of StoreTrait {
             player.failed_crafts,
             player.reputation
         )
-    }
-
-    // [ NFT Player Character methods ]
-    fn read_player_nft(self: @Store, token_id: u256) -> PlayerNFT {
-        self.world.read_model((token_id))
-    }
-
-    fn write_player_nft(ref self: Store, player_nft: PlayerNFT) {
-        self.world.write_model(@player_nft)
-    }
-
-    fn get_player_character_by_owner(self: @Store, owner: ContractAddress) -> PlayerNFT {
-        // Fast-path: no balance, no NFT
-        let balance = self.read_nft_balance(owner);
-        if balance.balance == 0 {
-            return ZeroablePlayerNFTTrait::zero();
-        }
-
-        // Use owner->index mapping (index 0) instead of linear scan
-        let owner_index = self.read_nft_owner_token_index(owner, 0);
-        if owner_index.token_id == 0 {
-            return ZeroablePlayerNFTTrait::zero();
-        }
-
-        self.read_player_nft(owner_index.token_id)
-    }
-
-    // [ NFT Balance methods ]
-    fn read_nft_balance(self: @Store, owner: ContractAddress) -> NFTBalance {
-        self.world.read_model((owner))
-    }
-
-    fn write_nft_balance(ref self: Store, balance: NFTBalance) {
-        self.world.write_model(@balance)
-    }
-
-    // [ NFT Approval methods ]
-    fn read_nft_approval(self: @Store, token_id: u256) -> NFTApproval {
-        self.world.read_model((token_id))
-    }
-
-    fn write_nft_approval(ref self: Store, approval: NFTApproval) {
-        self.world.write_model(@approval)
-    }
-
-    // [ NFT Operator Approval methods ]
-    fn read_nft_operator_approval(self: @Store, owner: ContractAddress, operator: ContractAddress) -> NFTOperatorApproval {
-        self.world.read_model((owner, operator))
-    }
-
-    fn write_nft_operator_approval(ref self: Store, operator_approval: NFTOperatorApproval) {
-        self.world.write_model(@operator_approval)
-    }
-
-    // [ NFT Token Index methods ]
-    fn read_nft_token_index(self: @Store, index: u256) -> NFTTokenIndex {
-        self.world.read_model((index))
-    }
-
-    fn write_nft_token_index(ref self: Store, token_index: NFTTokenIndex) {
-        self.world.write_model(@token_index)
-    }
-
-    // [ NFT Owner Token Index methods ]
-    fn read_nft_owner_token_index(self: @Store, owner: ContractAddress, index: u256) -> NFTOwnerTokenIndex {
-        self.world.read_model((owner, index))
-    }
-
-    fn write_nft_owner_token_index(ref self: Store, owner_token_index: NFTOwnerTokenIndex) {
-        self.world.write_model(@owner_token_index)
-    }
-
-    // [ NFT Collection methods ]
-    fn read_player_nft_collection(self: @Store) -> PlayerNFTCollection {
-        self.world.read_model((1)) // collection_id is always 1
-    }
-
-    fn write_player_nft_collection(ref self: Store, collection: PlayerNFTCollection) {
-        self.world.write_model(@collection)
     }
 }

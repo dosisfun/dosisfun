@@ -1,6 +1,6 @@
 use dosis_game::models::nft::{PlayerNFT, PlayerNFTAssert, ZeroablePlayerNFTTrait};
 use dosis_game::models::drug::{Drug, DrugAssert};
-use dosis_game::types::drug_type::{DrugRarity, DrugState};
+use dosis_game::types::drug_type::{DrugRarity, DrugState, DrugStateHelper, DrugRarityHelper};
 use dosis_game::types::recipe::CraftingResult;
 use dosis_game::models::recipe::{Recipe, RecipeAssert};
 use dosis_game::helpers::experience_utils::ExperienceCalculator;
@@ -19,10 +19,11 @@ pub trait IDrugCrafting<T> {
 pub mod drug_crafting_system {
     use super::{
         PlayerNFT, PlayerNFTAssert, ZeroablePlayerNFTTrait, Drug, DrugAssert, 
-        DrugRarity, DrugState, Recipe, CraftingResult,
+        DrugRarity, DrugState, DrugStateHelper, DrugRarityHelper, Recipe, CraftingResult,
         ExperienceCalculator, StoreTrait, IDrugCrafting
     };
     use starknet::{get_caller_address, get_block_timestamp};
+        use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     #[storage]
     struct Storage {
@@ -52,7 +53,7 @@ pub mod drug_crafting_system {
             let caller = get_caller_address();
 
             let mut player_nft = store.get_player_character_by_owner(caller);
-            player_nft.assert_exists();
+            PlayerNFTAssert::assert_exists(player_nft);
 
             // Get recipe from storage
             let recipe = store.read_recipe(recipe_id);
@@ -78,7 +79,7 @@ pub mod drug_crafting_system {
                         name: recipe.name,
                         drug_type: recipe.drug_type,
                         rarity: recipe.rarity,
-                        state: DrugState::Refined,
+                        state: DrugStateHelper::to_felt252(DrugState::Refined),
                         purity: calculate_purity(crafting_result, recipe.difficulty),
                         quantity: 1,
                         creation_timestamp: get_block_timestamp(),
@@ -103,7 +104,8 @@ pub mod drug_crafting_system {
                     }
 
                     // Award reputation based on drug quality
-                    player_nft.reputation += calculate_reputation_gain(drug.rarity, drug.purity).into();
+                    let rarity_enum = DrugRarityHelper::from_felt252(drug.rarity);
+                    player_nft.reputation += calculate_reputation_gain(rarity_enum, drug.purity).into();
 
                     store.write_drug(drug);
                     store.write_player_nft(player_nft);
@@ -133,7 +135,7 @@ pub mod drug_crafting_system {
             let caller = get_caller_address();
 
             let player_nft = store.get_player_character_by_owner(caller);
-            player_nft.assert_exists();
+            PlayerNFTAssert::assert_exists(player_nft);
 
             (
                 player_nft.level,
@@ -180,7 +182,7 @@ pub mod drug_crafting_system {
     }
 
     fn simulate_crafting(success_rate: u8) -> CraftingResult {
-        // Simplified random simulation
+        // Random crafting outcome calculation
         let random_value = get_block_timestamp() % 100;
         
         if random_value < 2 {

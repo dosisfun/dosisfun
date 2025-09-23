@@ -1,5 +1,5 @@
 use dosis_game::models::recipe::{Recipe, RecipeAssert};
-use dosis_game::types::drug_type::{DrugType, DrugRarity};
+use dosis_game::types::drug_type::{DrugType, DrugRarity, DrugTypeHelper, DrugRarityHelper};
 use dosis_game::types::recipe::Ingredient;
 use dosis_game::store::StoreTrait;
 
@@ -23,8 +23,9 @@ pub trait IRecipeSystem<T> {
 
 #[dojo::contract]
 pub mod recipe_system {
-    use super::{Recipe, RecipeAssert, DrugType, DrugRarity, Ingredient, StoreTrait, IRecipeSystem};
+    use super::{Recipe, RecipeAssert, DrugType, DrugRarity, Ingredient, StoreTrait, IRecipeSystem, DrugTypeHelper, DrugRarityHelper};
     use starknet::get_caller_address;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     #[storage]
     struct Storage {
@@ -63,9 +64,10 @@ pub mod recipe_system {
             let recipe = Recipe {
                 id: recipe_id.try_into().unwrap(),
                 name,
-                drug_type,
-                rarity,
-                ingredients: ingredients.span(),
+                drug_type: DrugTypeHelper::to_felt252(drug_type),
+                rarity: DrugRarityHelper::to_felt252(rarity),
+                ingredient_count: ingredients.len().try_into().unwrap(),
+                primary_ingredient: if ingredients.len() > 0 { *ingredients.at(0).name } else { '' },
                 difficulty,
                 base_experience,
                 success_rate,
@@ -148,9 +150,10 @@ pub mod recipe_system {
         let cocaine_recipe = Recipe {
             id: 1,
             name: 'cocaine_basic',
-            drug_type: DrugType::Stimulant,
-            rarity: DrugRarity::Common,
-            ingredients: cocaine_ingredients.span(),
+            drug_type: DrugTypeHelper::to_felt252(DrugType::Stimulant),
+            rarity: DrugRarityHelper::to_felt252(DrugRarity::Common),
+            ingredient_count: 2,
+            primary_ingredient: 'coca_leaf',
             difficulty: 3,
             base_experience: 50,
             success_rate: 70,
@@ -174,9 +177,10 @@ pub mod recipe_system {
         let heroin_recipe = Recipe {
             id: 2,
             name: 'heroin_pure',
-            drug_type: DrugType::Opioid,
-            rarity: DrugRarity::Rare,
-            ingredients: heroin_ingredients.span(),
+            drug_type: DrugTypeHelper::to_felt252(DrugType::Opioid),
+            rarity: DrugRarityHelper::to_felt252(DrugRarity::Rare),
+            ingredient_count: 4,
+            primary_ingredient: 'poppy_sap',
             difficulty: 7,
             base_experience: 150,
             success_rate: 45,
@@ -200,9 +204,10 @@ pub mod recipe_system {
         let lsd_recipe = Recipe {
             id: 3,
             name: 'lsd_tabs',
-            drug_type: DrugType::Hallucinogen,
-            rarity: DrugRarity::Epic,
-            ingredients: lsd_ingredients.span(),
+            drug_type: DrugTypeHelper::to_felt252(DrugType::Hallucinogen),
+            rarity: DrugRarityHelper::to_felt252(DrugRarity::Epic),
+            ingredient_count: 5,
+            primary_ingredient: 'ergot_fungus',
             difficulty: 9,
             base_experience: 300,
             success_rate: 25,

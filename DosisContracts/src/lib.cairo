@@ -9,7 +9,7 @@ pub mod models {
 }
 
 pub mod systems {
-    pub mod player;
+    pub mod player_token;
     pub mod drug_crafting;
     pub mod recipe_system;
 }
@@ -17,7 +17,6 @@ pub mod systems {
 pub mod types {
     pub mod drug_type;
     pub mod recipe;
-    pub mod erc721;
 }
 
 mod helpers {
@@ -36,4 +35,5 @@ pub mod tests {
     mod test_recipe;
     mod test_drug_crafting;
     mod test_recipe_system;
+    mod test_player_token;
 }

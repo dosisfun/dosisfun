@@ -1,4 +1,4 @@
-use dosis_game::types::drug_type::{DrugType, DrugRarity, DrugState};
+
 use starknet::ContractAddress;
 use core::num::traits::zero::Zero;
 
@@ -9,9 +9,9 @@ pub struct Drug {
     pub id: u32,
     pub owner: ContractAddress,
     pub name: felt252,
-    pub drug_type: DrugType,
-    pub rarity: DrugRarity,
-    pub state: DrugState,
+    pub drug_type: felt252, 
+    pub rarity: felt252,    
+    pub state: felt252,     
     pub purity: u8, // 0-100
     pub quantity: u32,
     pub creation_timestamp: u64,
@@ -45,11 +45,11 @@ pub impl ZeroableDrugTrait of Zero<Drug> {
     fn zero() -> Drug {
         Drug {
             id: 0,
-            owner: starknet::contract_address_const::<0>(),
+            owner: 0.try_into().unwrap(),
             name: '',
-            drug_type: DrugType::Stimulant,
-            rarity: DrugRarity::Common,
-            state: DrugState::Raw,
+            drug_type: 0, // Default to 0 (e.g., Stimulant)
+            rarity: 0,    // Default to 0 (e.g., Common)
+            state: 0,     // Default to 0 (e.g., Raw)
             purity: 0,
             quantity: 0,
             creation_timestamp: 0,
@@ -70,20 +70,20 @@ pub impl ZeroableDrugTrait of Zero<Drug> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Drug, DrugType, DrugRarity, DrugState, ZeroableDrugTrait};
-    use starknet::{ContractAddress, contract_address_const};
+    use super::{Drug, ZeroableDrugTrait};
+    use starknet::ContractAddress;
 
     #[test]
     fn test_drug_creation() {
-        let owner: ContractAddress = contract_address_const::<0x123>();
+        let owner: ContractAddress = 0x123.try_into().unwrap();
         
         let drug = Drug {
             id: 1,
             owner,
             name: 'cocaine_pure',
-            drug_type: DrugType::Stimulant,
-            rarity: DrugRarity::Rare,
-            state: DrugState::Pure,
+            drug_type: 0, // Stimulant
+            rarity: 2, // Rare  
+            state: 3, // Pure
             purity: 95,
             quantity: 5,
             creation_timestamp: 1234567890,
@@ -107,7 +107,7 @@ mod tests {
 
     #[test]
     fn test_drug_inventory_creation() {
-        let player: ContractAddress = contract_address_const::<0x456>();
+        let player: ContractAddress = 0x456.try_into().unwrap();
         let mut drug_ids = ArrayTrait::new();
         drug_ids.append(1);
         drug_ids.append(2);

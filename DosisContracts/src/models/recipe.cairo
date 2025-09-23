@@ -1,5 +1,4 @@
-use dosis_game::types::drug_type::{DrugType, DrugRarity};
-use dosis_game::types::recipe::Ingredient;
+
 use core::num::traits::zero::Zero;
 
 #[derive(Copy, Drop, Serde, Debug, PartialEq)]
@@ -8,9 +7,10 @@ pub struct Recipe {
     #[key]
     pub id: u32,
     pub name: felt252,
-    pub drug_type: DrugType,
-    pub rarity: DrugRarity,
-    pub ingredients: Span<Ingredient>,
+    pub drug_type: felt252, 
+    pub rarity: felt252,    
+    pub ingredient_count: u8, // Number of ingredients
+    pub primary_ingredient: felt252, // Name of the primary ingredient
     pub difficulty: u8, // 1-10
     pub base_experience: u16,
     pub success_rate: u8, // 0-100
@@ -34,13 +34,13 @@ pub impl RecipeAssert of AssertTrait {
 pub impl ZeroableRecipeTrait of Zero<Recipe> {
     #[inline(always)]
     fn zero() -> Recipe {
-        let empty_ingredients = ArrayTrait::new().span();
         Recipe {
             id: 0,
             name: '',
-            drug_type: DrugType::Stimulant,
-            rarity: DrugRarity::Common,
-            ingredients: empty_ingredients,
+            drug_type: 0, // Default to 0 (e.g., Stimulant)
+            rarity: 0,    // Default to 0 (e.g., Common)
+            ingredient_count: 0,
+            primary_ingredient: '',
             difficulty: 1,
             base_experience: 10,
             success_rate: 50,
@@ -62,24 +62,18 @@ pub impl ZeroableRecipeTrait of Zero<Recipe> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Recipe, DrugType, DrugRarity, Ingredient, ZeroableRecipeTrait};
+    use super::{Recipe, ZeroableRecipeTrait};
 
     #[test]
     fn test_recipe_creation() {
-        let mut ingredients = ArrayTrait::new();
-        ingredients.append(Ingredient {
-            name: 'coca_leaf',
-            quantity: 5,
-            purity: 90,
-        });
-        let ingredients_span = ingredients.span();
         
         let recipe = Recipe {
             id: 1,
             name: 'cocaine_basic',
-            drug_type: DrugType::Stimulant,
-            rarity: DrugRarity::Common,
-            ingredients: ingredients_span,
+            drug_type: 0, // Default to 0 (e.g., Stimulant)
+            rarity: 0,    // Default to 0 (e.g., Common)
+            ingredient_count: 3,
+            primary_ingredient: 'coca_leaf',
             difficulty: 3,
             base_experience: 50,
             success_rate: 70,
@@ -87,19 +81,19 @@ mod tests {
             created_by: '0x123',
         };
         
-        assert_eq!(recipe.id, 1, "Recipe ID should be 1");
-        assert_eq!(recipe.name, 'cocaine_basic', "Recipe name should match");
-        assert_eq!(recipe.difficulty, 3, "Difficulty should be 3");
-        assert_eq!(recipe.base_experience, 50, "Base experience should be 50");
-        assert_eq!(recipe.is_active, true, "Recipe should be active");
+        assert(recipe.id == 1, 'Recipe ID should be 1');
+        assert(recipe.name == 'cocaine_basic', 'Recipe name should match');
+        assert(recipe.difficulty == 3, 'Difficulty should be 3');
+        assert(recipe.base_experience == 50, 'Base experience should be 50');
+        assert(recipe.is_active == true, 'Recipe should be active');
     }
 
     #[test]
     fn test_recipe_zero_initialization() {
         let zero_recipe: Recipe = ZeroableRecipeTrait::zero();
         
-        assert_eq!(zero_recipe.id, 0, "Zero recipe ID should be 0");
-        assert_eq!(zero_recipe.difficulty, 1, "Zero recipe difficulty should be 1");
-        assert_eq!(zero_recipe.is_active, false, "Zero recipe should not be active");
+        assert(zero_recipe.id == 0, 'Zero recipe ID should be 0');
+        assert(zero_recipe.difficulty == 1, 'Zero recipe difficulty is 1');
+        assert(zero_recipe.is_active == false, 'Zero recipe not active');
     }
 }
