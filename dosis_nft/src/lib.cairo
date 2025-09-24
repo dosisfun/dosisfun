@@ -11,3 +11,9 @@ pub mod utils {
     pub mod renderer;
     pub mod encoder;
 }
+
+pub mod interfaces {
+    pub mod ierc20;
+}
+
+pub mod contract;
