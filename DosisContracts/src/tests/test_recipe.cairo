@@ -1,27 +1,20 @@
 use dosis_game::models::recipe::{RecipeAssert, ZeroableRecipeTrait};
-use dosis_game::types::drug_type::{DrugType, DrugRarity};
-use dosis_game::types::recipe::Ingredient;
 
 #[cfg(test)]
 mod tests {
     use super::{RecipeAssert, ZeroableRecipeTrait};
-    use super::{DrugType, DrugRarity, Ingredient};
     use dosis_game::constants;
 
     #[test]
     #[available_gas(20000000)]
     fn test_recipe_creation() {
-        let mut ingredients = ArrayTrait::new();
-        ingredients.append(Ingredient { name: 'Coca Leaves', quantity: 100, purity: 80 });
-        ingredients.append(Ingredient { name: 'Chemicals', quantity: 50, purity: 90 });
-        let ingredients_span = ingredients.span();
-
         let mut recipe = ZeroableRecipeTrait::zero();
         recipe.id = 1;
         recipe.name = 'Cocaine Basic';
-        recipe.drug_type = DrugType::Stimulant;
-        recipe.rarity = DrugRarity::Common;
-        recipe.ingredients = ingredients_span;
+        recipe.drug_type = 0; // Stimulant
+        recipe.rarity = 0; // Common
+        recipe.ingredient_count = 3;
+        recipe.primary_ingredient = 'coca_leaf';
         recipe.difficulty = 3;
         recipe.base_experience = 50;
         recipe.success_rate = 70;
@@ -30,8 +23,10 @@ mod tests {
 
         assert(recipe.id == 1, 'Recipe ID should be 1');
         assert(recipe.name == 'Cocaine Basic', 'Recipe name should match');
-        assert(recipe.drug_type == DrugType::Stimulant, 'Drug type should be Stimulant');
-        assert(recipe.rarity == DrugRarity::Common, 'Rarity should be Common');
+        assert(recipe.drug_type == 0, 'Drug type should be Stimulant');
+        assert(recipe.rarity == 0, 'Rarity should be Common');
+        assert(recipe.ingredient_count == 3, 'Should have 3 ingredients');
+        assert(recipe.primary_ingredient == 'coca_leaf', 'Primary ingredient should match');
         assert(recipe.difficulty == 3, 'Difficulty should be 3');
         assert(recipe.base_experience == 50, 'Base experience should be 50');
         assert(recipe.success_rate == 70, 'Success rate should be 70');
@@ -46,20 +41,6 @@ mod tests {
         
         // This should not panic
         recipe.assert_exists();
-    }
-
-    #[test]
-    #[available_gas(20000000)]
-    fn test_ingredient_creation() {
-        let ingredient = Ingredient {
-            name: 'Test Ingredient',
-            quantity: 100,
-            purity: 85
-        };
-
-        assert(ingredient.name == 'Test Ingredient', 'Ingredient name should match');
-        assert(ingredient.quantity == 100, 'Quantity should be 100');
-        assert(ingredient.purity == 85, 'Purity should be 85');
     }
 
     #[test]
@@ -79,18 +60,14 @@ mod tests {
 
     #[test]
     #[available_gas(20000000)]
-    fn test_recipe_with_multiple_ingredients() {
-        let mut ingredients = ArrayTrait::new();
-        ingredients.append(Ingredient { name: 'Ingredient 1', quantity: 100, purity: 80 });
-        ingredients.append(Ingredient { name: 'Ingredient 2', quantity: 50, purity: 90 });
-        ingredients.append(Ingredient { name: 'Ingredient 3', quantity: 25, purity: 95 });
-        let ingredients_span = ingredients.span();
-
+    fn test_recipe_ingredient_count() {
         let mut recipe = ZeroableRecipeTrait::zero();
-        recipe.id = 1;
-        recipe.ingredients = ingredients_span;
+        recipe.id = 2;
+        recipe.name = 'Complex Recipe';
+        recipe.ingredient_count = 5;
+        recipe.primary_ingredient = 'main_ingredient';
 
-        let recipe_ingredients = recipe.ingredients;
-        assert(recipe_ingredients.len() == 3, 'Should have 3 ingredients');
+        assert(recipe.ingredient_count == 5, 'Should have 5 ingredients');
+        assert(recipe.primary_ingredient == 'main_ingredient', 'Primary ingredient should match');
     }
 }

@@ -2,45 +2,13 @@
 version = 1
 
 [[package]]
-name = "dojo"
-version = "1.7.0-alpha.4"
-source = "git+https://github.com/dojoengine/dojo?tag=v1.7.0-alpha.4#7b78108ce7aea7753c0a9e34cb83465a76bbf2e4"
-dependencies = [
- "dojo_macros",
-]
-
-[[package]]
-name = "dojo_cairo_test"
-version = "1.7.0-alpha.4"
-source = "git+https://github.com/dojoengine/dojo?tag=v1.7.0-alpha.4#7b78108ce7aea7753c0a9e34cb83465a76bbf2e4"
-dependencies = [
- "dojo",
-]
-
-[[package]]
-name = "dojo_macros"
-version = "1.7.0-alpha.4"
-source = "git+https://github.com/dojoengine/dojo?tag=v1.7.0-alpha.4#7b78108ce7aea7753c0a9e34cb83465a76bbf2e4"
-
-[[package]]
-name = "dosis_game"
-version = "1.0.0"
-dependencies = [
- "dojo",
- "dojo_cairo_test",
- "dojo_macros",
- "dosis_nft",
- "openzeppelin_introspection",
- "openzeppelin_token",
-]
-
-[[package]]
 name = "dosis_nft"
 version = "1.0.0"
 dependencies = [
  "graffiti",
  "openzeppelin_introspection",
  "openzeppelin_token",
+ "snforge_std",
 ]
 
 [[package]]
@@ -86,3 +54,16 @@ dependencies = [
 name = "openzeppelin_utils"
 version = "1.0.0"
 source = "git+https://github.com/OpenZeppelin/cairo-contracts?tag=v1.0.0#755ce1adbf8d89ed23fbb8daa328fcbeab7c6424"
+
+[[package]]
+name = "snforge_scarb_plugin"
+version = "0.39.0"
+source = "git+https://github.com/foundry-rs/starknet-foundry?tag=v0.39.0#13ee73d44807f57b7e2c64be766161f48ca04c27"
+
+[[package]]
+name = "snforge_std"
+version = "0.39.0"
+source = "git+https://github.com/foundry-rs/starknet-foundry?tag=v0.39.0#13ee73d44807f57b7e2c64be766161f48ca04c27"
+dependencies = [
+ "snforge_scarb_plugin",
+]

@@ -3,7 +3,7 @@ pub mod PseudoRandom {
     use core::hash::HashStateTrait;
     use core::num::traits::{WrappingAdd, WrappingMul};
     use core::pedersen::PedersenTrait;
-    use core::starknet::{get_block_number, get_block_timestamp};
+    use starknet::{get_block_number, get_block_timestamp};
     use super::*;
 
     /// Generates a pseudo-random `u8` value within a specified range `[min, max]`.

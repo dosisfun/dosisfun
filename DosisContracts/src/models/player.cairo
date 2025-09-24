@@ -61,13 +61,13 @@ pub impl ZeroablePlayerTrait of Zero<Player> {
 #[cfg(test)]
 mod tests {
     use dosis_game::constants;
-    use starknet::{ContractAddress, contract_address_const};
+    use starknet::ContractAddress;
     use super::{Player, ZeroablePlayerTrait};
 
     #[test]
     #[available_gas(1000000)]
     fn test_player_initialization() {
-        let mock_address: ContractAddress = contract_address_const::<0x123>();
+        let mock_address: ContractAddress = 0x123.try_into().unwrap();
 
         let player = Player {
             address: mock_address,
@@ -105,7 +105,7 @@ mod tests {
     #[test]
     #[available_gas(1000000)]
     fn test_player_with_experience() {
-        let mock_address: ContractAddress = contract_address_const::<0x456>();
+        let mock_address: ContractAddress = 0x456.try_into().unwrap();
 
         let player = Player {
             address: mock_address,
@@ -130,8 +130,8 @@ mod tests {
     #[test]
     #[available_gas(1000000)]
     fn test_player_address_uniqueness() {
-        let address1: ContractAddress = contract_address_const::<0x123>();
-        let address2: ContractAddress = contract_address_const::<0x456>();
+        let address1: ContractAddress = 0x123.try_into().unwrap();
+        let address2: ContractAddress = 0x456.try_into().unwrap();
 
         let player1 = Player {
             address: address1,

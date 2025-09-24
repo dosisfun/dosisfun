@@ -1,12 +1,10 @@
 use dosis_game::models::recipe::{RecipeAssert};
-use dosis_game::types::drug_type::{DrugType, DrugRarity};
-use dosis_game::types::recipe::Ingredient;
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        RecipeAssert, DrugType, DrugRarity, Ingredient
-    };
+    use super::RecipeAssert;
+    use dosis_game::types::drug_type::{DrugType, DrugRarity};
+    use dosis_game::types::recipe::Ingredient;
     use dosis_game::constants;
 
     #[test]

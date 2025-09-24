@@ -1,9 +1,9 @@
 // Starknet import
-use starknet::{ContractAddress, contract_address_const};
+use starknet::ContractAddress;
 
 // Zero address for initialization
 pub fn ZERO_ADDRESS() -> ContractAddress {
-    contract_address_const::<0x0>()
+    0.try_into().unwrap()
 }
 
 // Time constants
@@ -31,6 +31,9 @@ pub const MIN_SUCCESS_RATE: u8 = 5;
 // Reputation constants
 pub const BASE_REPUTATION_GAIN: u8 = 1;
 pub const LEVEL_UP_REPUTATION_BONUS: u8 = 10;
+
+// NFT constants
+pub const MAX_PLAYER_NFT_SUPPLY: u256 = 10000;
 
 // Drug rarity multipliers
 pub const COMMON_RARITY_MULTIPLIER: u8 = 1;

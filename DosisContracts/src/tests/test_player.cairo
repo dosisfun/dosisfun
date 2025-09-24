@@ -1,9 +1,9 @@
 use dosis_game::models::player::{PlayerAssert, ZeroablePlayerTrait};
-use dosis_game::constants;
 
 #[cfg(test)]
 mod tests {
-    use super::{PlayerAssert, ZeroablePlayerTrait, constants};
+    use super::{PlayerAssert, ZeroablePlayerTrait};
+    use dosis_game::constants;
 
     #[test]
     #[available_gas(20000000)]
@@ -37,7 +37,7 @@ mod tests {
     #[available_gas(20000000)]
     fn test_player_assert_exists() {
         let mut player = ZeroablePlayerTrait::zero();
-        player.address = starknet::contract_address_const::<0x123>(); // Set a valid address
+        player.address = 0x123.try_into().unwrap(); // Set a valid address
         
         // This should not panic
         player.assert_exists();
