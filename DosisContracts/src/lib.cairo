@@ -6,12 +6,15 @@ pub mod models {
     pub mod drug;
     pub mod recipe;
     pub mod nft;
+    pub mod token_config;
+    pub mod events;
 }
 
 pub mod systems {
     pub mod player_token;
     pub mod drug_crafting;
     pub mod recipe_system;
+    pub mod minter;
 }
 
 pub mod types {
@@ -27,6 +30,15 @@ mod helpers {
 
 pub mod utils {
     pub mod string;
+    pub mod hash;
+}
+
+pub mod interfaces {
+    pub mod ierc20;
+}
+
+pub mod libs {
+    pub mod dns;
 }
 
 pub mod tests {

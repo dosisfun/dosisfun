@@ -73,10 +73,12 @@ pub mod player_token {
     // Dojo Game Data Integration
     use dosis_game::models::nft::{PlayerNFT, PlayerNFTAssert, ZeroablePlayerNFTTrait};
     use dosis_game::store::{Store, StoreTrait};
+    use dosis_game::libs::dns::{DnsTrait};
     use dosis_game::constants;
 
     mod Errors {
         pub const CALLER_IS_NOT_OWNER: felt252 = 'DOSIS: caller is not owner';
+        pub const CALLER_IS_NOT_MINTER: felt252 = 'DOSIS: caller is not minter';
         pub const TOKEN_NOT_EXISTS: felt252 = 'DOSIS: token does not exist';
         pub const INVALID_CHARACTER_NAME: felt252 = 'DOSIS: invalid character name';
         pub const PLAYER_ALREADY_HAS_TOKEN: felt252 = 'DOSIS: player has token';
@@ -114,6 +116,11 @@ pub mod player_token {
         fn mint_player_character(ref self: ContractState, recipient: ContractAddress, character_name: felt252) -> u256 {
             // Validate character name
             assert(character_name != '', Errors::INVALID_CHARACTER_NAME);
+            assert(!recipient.is_zero(), Errors::INVALID_CHARACTER_NAME);
+            
+            // Verify caller is the minter (not hardcoded!)
+            let store = StoreTrait::new(self.world_default());
+            self._assert_caller_is_minter(@store);
             
             // Check if player already has a token (one per address policy)
             assert(self.erc721_dosis.balance_of(recipient) == 0, Errors::PLAYER_ALREADY_HAS_TOKEN);
@@ -222,7 +229,7 @@ pub mod player_token {
             self.erc721.burn(token_id);
         }
 
-        // Admin functions
+        // Admin functions  
         fn set_paused(ref self: ContractState, is_paused: bool) {
             // Only contract admin can pause/unpause
             let caller = starknet::get_caller_address();
@@ -374,6 +381,15 @@ pub mod player_token {
                 player_nft.last_active_timestamp = starknet::get_block_timestamp();
                 store.write_player_nft(player_nft);
             }
+        }
+    }
+
+    // Minter access control
+    #[generate_trait]
+    impl MinterImpl of MinterTrait {
+        #[inline(always)]
+        fn _assert_caller_is_minter(self: @ContractState, store: @Store) {
+            assert(store.world.minter_address() == starknet::get_caller_address(), Errors::CALLER_IS_NOT_MINTER);
         }
     }
 

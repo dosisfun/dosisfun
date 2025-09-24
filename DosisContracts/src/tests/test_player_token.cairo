@@ -1,10 +1,8 @@
-use starknet::ContractAddress;
-use dosis_game::models::nft::{PlayerNFT, UserTokenMapping, TokenOwnerMapping, ZeroablePlayerNFTTrait};
-use dosis_game::constants;
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use starknet::ContractAddress;
+    use dosis_game::models::nft::{PlayerNFT, UserTokenMapping, TokenOwnerMapping, ZeroablePlayerNFTTrait};
+    use dosis_game::constants;
 
     #[test]
     #[available_gas(20000000)]
