@@ -100,15 +100,15 @@ mod DosisNFTContract {
         ref self: ContractState,
         name: ByteArray,
         symbol: ByteArray,
-        base_uri: Option<ByteArray>,
-        contract_uri: Option<ByteArray>,
-        max_supply: Option<u256>,
+        base_uri: ByteArray,
+        contract_uri: ByteArray,
+        max_supply: u256,
         admin: ContractAddress,
         mint_price: u256,
         treasury_address: ContractAddress,
     ) {
         // Initialize the ERC721DosisComponent
-        self.erc721_dosis.initializer(name, symbol, base_uri, contract_uri, max_supply);
+        self.erc721_dosis.initializer(name, symbol, Option::Some(base_uri), Option::Some(contract_uri), Option::Some(max_supply));
         
         // Set admin
         assert(!admin.is_zero(), Errors::INVALID_ADDRESS);
