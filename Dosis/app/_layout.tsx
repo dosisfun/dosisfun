@@ -16,6 +16,7 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="nft-validation" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding/intro-complete" options={{ headerShown: false }} />
         <Stack.Screen name="wallet" options={{ headerShown: false }} />
       </Stack>
     </AegisProvider>

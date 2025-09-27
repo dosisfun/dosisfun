@@ -4,6 +4,7 @@ import { useFonts, PixelifySans_400Regular } from '@expo-google-fonts/pixelify-s
 import { useAegis } from '@cavos/aegis';
 import * as Clipboard from 'expo-clipboard';
 import { formatAddress } from '@/utils/utils';
+import { router } from 'expo-router';
 
 // Mock NFT data
 const mockNFTs = [
@@ -73,6 +74,16 @@ export default function NFTValidation() {
       }, 2000);
     } catch (error) {
       console.error('Error copying to clipboard:', error);
+    }
+  };
+
+  const handleContinueWithCharacter = () => {
+    if (selectedNFT) {
+      // Navigate to intro screen with character data
+      router.push({
+        pathname: '/onboarding/intro-complete',
+        params: { characterId: selectedNFT.id.toString() }
+      });
     }
   };
 
@@ -295,6 +306,7 @@ export default function NFTValidation() {
               Selected: {selectedNFT.name}
             </Text>
             <TouchableOpacity
+              onPress={handleContinueWithCharacter}
               style={{
                 backgroundColor: '#D301F2',
                 paddingHorizontal: 30,
