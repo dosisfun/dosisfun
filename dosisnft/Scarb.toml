@@ -1,20 +1,18 @@
 [package]
-name = "dosis_nft"
-version = "1.0.0"
+name = "dosisnft"
+version = "0.1.0"
 edition = "2024_07"
-cairo-version = ">=2.10.1"
+
+# See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
 
 [dependencies]
-starknet = ">=2.10.1"
-openzeppelin_token = { git = "https://github.com/OpenZeppelin/cairo-contracts", tag = "v1.0.0" }
-openzeppelin_introspection = { git = "https://github.com/OpenZeppelin/cairo-contracts", tag = "v1.0.0" }
-graffiti = { git = "https://github.com/rsodre/graffiti", rev = "url" }
+starknet = "2.12.2"
+openzeppelin = "2.0.0"
+graffiti = { git = "https://github.com/bal7hazar/graffiti.git", rev = "e8b0854" }
 
 [dev-dependencies]
-cairo_test = ">=2.10.1"
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.39.0" }
-
-[lib]
+snforge_std = "0.49.0"
+assert_macros = "2.12.2"
 
 [[target.starknet-contract]]
 sierra = true
