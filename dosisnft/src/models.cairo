@@ -4,6 +4,7 @@ use starknet::ContractAddress;
 pub struct CharacterStats {
     pub owner: ContractAddress,
     pub character_name: ByteArray,
+    pub cash: u256,
     pub level: u8,
     pub experience: u16,
     pub reputation: u16, // 0-1000

@@ -88,7 +88,7 @@ mod MyToken {
         pub const INSUFFICIENT_PAYMENT: felt252 = 'Insufficient payment';
         pub const PAYMENT_FAILED: felt252 = 'Payment transfer failed';
     }
-    
+
     const STRK_ADDRESS: felt252 =
         0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d;
 
@@ -162,7 +162,7 @@ mod MyToken {
         }
 
         #[external(v0)]
-        fn mint(ref self: ContractState, to: ContractAddress) {
+        fn mint(ref self: ContractState, to: ContractAddress, character_name: ByteArray) {
             self.accesscontrol.assert_only_role(DEFAULT_ADMIN_ROLE);
 
             let total_supply = self.total_supply.read();
@@ -171,20 +171,26 @@ mod MyToken {
 
             self.erc721.safe_mint(to, token_id, [].span());
 
-            self.characters_stats.entry(token_id).write(CharacterStats {
-                owner: to,
-                character_name: "Soy yo el pepo",
-                level: 10,
-                experience: 20,
-                reputation: 100,
-                total_drugs_created: 22,
-                successful_crafts: 12,
-                failed_crafts: 0,
-                creation_timestamp: 0,
-                last_active_timestamp: 0,
-                is_minted: true,
-                is_active: true
-            });
+            self
+                .characters_stats
+                .entry(token_id)
+                .write(
+                    CharacterStats {
+                        owner: to,
+                        character_name,
+                        cash: 0,
+                        level: 0,
+                        experience: 0,
+                        reputation: 0,
+                        total_drugs_created: 0,
+                        successful_crafts: 0,
+                        failed_crafts: 0,
+                        creation_timestamp: 0,
+                        last_active_timestamp: 0,
+                        is_minted: true,
+                        is_active: true,
+                    },
+                );
         }
 
         #[external(v0)]
