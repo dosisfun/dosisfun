@@ -3,12 +3,6 @@ name = "Dosis"
 description = "Dosis Game."
 seed = "dosis_game"
 
-[world.socials]
-x = ""
-github = ""
-# discord = ""
-# telegram = ""
-
 [namespace]
 default = "dosis_game"
 
@@ -17,8 +11,8 @@ chain_id = "KATANA_LOCAL"
 rpc_url = "http://localhost:5050"
 account_address = ""
 private_key = ""
-world_address = ""
-world_block = 1
 
 [writers]
-"dosisgame" = ["dosis_game"]
+"dosis_game" = [
+    "dosis_game-drug_crafting_system"
+]
