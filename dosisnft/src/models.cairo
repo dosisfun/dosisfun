@@ -16,3 +16,23 @@ pub struct CharacterStats {
     pub is_minted: bool,
     pub is_active: bool // whether the character is currently active
 }
+
+#[derive(Drop, Serde, starknet::Store)]
+pub struct Drug {
+    pub id: u32,
+    pub owner_token_id: u256,
+    pub name: ByteArray,
+    pub rarity: DrugRarity,
+    pub reputation_reward: u32,
+    pub cash_reward: u32,
+}
+
+#[derive(Copy, Drop, Serde, starknet::Store)]
+pub enum DrugRarity {
+    #[default]
+    Base,
+    Common,
+    Rare,
+    UltraRare,
+    Legendary,
+}
