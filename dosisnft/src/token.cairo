@@ -2,7 +2,8 @@
 // Compatible with OpenZeppelin Contracts for Cairo ^2.0.0
 
 const DEFAULT_ADMIN_ROLE: felt252 = selector!("DEFAULT_ADMIN_ROLE");
-const STATS_UPDATER_ROLE: felt252 = selector!("STATS_UPDATER_ROLE");
+const DOSIS_CONTRACT_ROLE: felt252 = selector!("DOSIS_CONTRACT_ROLE");
+const MINT_ROLE: felt252 = selector!("MINT_ROLE");
 
 #[starknet::contract]
 mod MyToken {
@@ -19,8 +20,9 @@ mod MyToken {
     };
     use starknet::{ClassHash, ContractAddress, get_caller_address};
     use crate::formater::create_metadata;
-    use crate::models::CharacterStats;
-    use super::{DEFAULT_ADMIN_ROLE, STATS_UPDATER_ROLE};
+    use crate::ingredient::{get_all_ingredients, get_ingredient_price};
+    use crate::models::{CharacterStats, Drug, DrugRarity};
+    use super::{DEFAULT_ADMIN_ROLE, DOSIS_CONTRACT_ROLE, MINT_ROLE};
 
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
@@ -67,6 +69,11 @@ mod MyToken {
         mint_price: u256,
         treasury_address: ContractAddress,
         total_supply: u256,
+        ingredient_counter: u256,
+        character_ingredients: Map<(u256, u32), u32>,
+        drug_counter: u32,
+        drugs: Map<u32, Drug>,
+        character_drug_ids: Map<u256, u32>,
     }
 
     #[event]
@@ -87,6 +94,8 @@ mod MyToken {
     mod Errors {
         pub const INSUFFICIENT_PAYMENT: felt252 = 'Insufficient payment';
         pub const PAYMENT_FAILED: felt252 = 'Payment transfer failed';
+        pub const INVALID_INGREDIENT: felt252 = 'Invalid ingredient ID';
+        pub const INSUFFICIENT_CASH: felt252 = 'Insufficient cash';
     }
 
     const STRK_ADDRESS: felt252 =
@@ -104,7 +113,8 @@ mod MyToken {
         self.accesscontrol.initializer();
 
         self.accesscontrol._grant_role(DEFAULT_ADMIN_ROLE, default_admin);
-        self.accesscontrol._grant_role(STATS_UPDATER_ROLE, stats_updater);
+        self.accesscontrol._grant_role(MINT_ROLE, default_admin);
+        self.accesscontrol._grant_role(DOSIS_CONTRACT_ROLE, stats_updater);
 
         self.mint_price.write(mint_price);
         self.treasury_address.write(treasury_address);
@@ -163,7 +173,7 @@ mod MyToken {
 
         #[external(v0)]
         fn mint(ref self: ContractState, to: ContractAddress, character_name: ByteArray) {
-            self.accesscontrol.assert_only_role(DEFAULT_ADMIN_ROLE);
+            self.accesscontrol.assert_only_role(MINT_ROLE);
 
             let total_supply = self.total_supply.read();
             let token_id = total_supply + 1;
@@ -254,6 +264,121 @@ mod MyToken {
         #[external(v0)]
         fn get_character_stats(self: @ContractState, token_id: u256) -> CharacterStats {
             self.characters_stats.entry(token_id).read()
+        }
+
+        #[external(v0)]
+        fn get_ingredient_price(self: @ContractState, ingredient_id: u32) -> u256 {
+            get_ingredient_price(ingredient_id)
+        }
+
+        #[external(v0)]
+        fn buy_ingredient(
+            ref self: ContractState, token_id: u256, ingredient_id: u32, quantity: u32,
+        ) {
+            let all_ingredients = get_all_ingredients();
+            assert(
+                ingredient_id >= 1 && ingredient_id <= all_ingredients.len(),
+                Errors::INVALID_INGREDIENT,
+            );
+
+            let price = self.get_ingredient_price(ingredient_id);
+            let total_cost = price * quantity.into();
+
+            let mut character_stats = self.characters_stats.entry(token_id).read();
+            assert(character_stats.cash >= total_cost, Errors::INSUFFICIENT_CASH);
+
+            character_stats.cash -= total_cost;
+            self.characters_stats.entry(token_id).write(character_stats);
+
+            let current_quantity = self
+                .character_ingredients
+                .entry((token_id, ingredient_id))
+                .read();
+            self
+                .character_ingredients
+                .entry((token_id, ingredient_id))
+                .write(current_quantity + quantity);
+
+            self.ingredient_counter.write(self.ingredient_counter.read() + 1);
+        }
+
+        #[external(v0)]
+        fn get_character_ingredient(
+            self: @ContractState, token_id: u256, ingredient_id: u32,
+        ) -> u32 {
+            self.character_ingredients.entry((token_id, ingredient_id)).read()
+        }
+
+        #[external(v0)]
+        fn get_character_ingredients(self: @ContractState, token_id: u256) -> Array<(u32, u32)> {
+            let mut ingredients = array![];
+            let all_ingredients = get_all_ingredients();
+
+            let mut ingredient_id: u32 = 1;
+            while ingredient_id <= all_ingredients.len() {
+                let quantity = self.character_ingredients.entry((token_id, ingredient_id)).read();
+                if quantity > 0 {
+                    ingredients.append((ingredient_id, quantity));
+                }
+
+                ingredient_id += 1;
+            }
+
+            ingredients
+        }
+
+        #[external(v0)]
+        fn create_drug(
+            ref self: ContractState,
+            token_id: u256,
+            name: ByteArray,
+            rarity: DrugRarity,
+            reputation_reward: u32,
+            cash_reward: u32,
+        ) {
+            self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
+
+            let drug_id = self.drug_counter.read() + 1;
+            self.drug_counter.write(drug_id);
+
+            let drug = Drug {
+                id: drug_id, owner_token_id: token_id, name, rarity, reputation_reward, cash_reward,
+            };
+
+            self.drugs.entry(drug_id).write(drug);
+
+            let current_count = self.character_drug_ids.entry(token_id).read();
+            self.character_drug_ids.entry(token_id).write(current_count + 1);
+
+            let mut character_stats = self.characters_stats.entry(token_id).read();
+            character_stats.total_drugs_created += 1;
+            self.characters_stats.entry(token_id).write(character_stats);
+        }
+
+        #[external(v0)]
+        fn get_drug(self: @ContractState, drug_id: u32) -> Drug {
+            self.drugs.entry(drug_id).read()
+        }
+
+        #[external(v0)]
+        fn get_character_drug_count(self: @ContractState, token_id: u256) -> u32 {
+            self.character_drug_ids.entry(token_id).read()
+        }
+
+        #[external(v0)]
+        fn get_character_drugs(self: @ContractState, token_id: u256) -> Array<Drug> {
+            let mut drugs = array![];
+            let total_drugs = self.drug_counter.read();
+
+            let mut i: u32 = 1;
+            while i <= total_drugs {
+                let drug = self.drugs.entry(i).read();
+                if drug.owner_token_id == token_id {
+                    drugs.append(drug);
+                }
+                i += 1;
+            }
+            drugs
         }
     }
 
