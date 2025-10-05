@@ -20,7 +20,6 @@ mod MyToken {
     };
     use starknet::{ClassHash, ContractAddress, get_caller_address};
     use crate::formater::create_metadata;
-    use crate::ingredient::{get_all_ingredients, get_ingredient_price};
     use crate::models::{CharacterStats, Drug, DrugRarity};
     use super::{DEFAULT_ADMIN_ROLE, DOSIS_CONTRACT_ROLE, MINT_ROLE};
 
@@ -94,7 +93,6 @@ mod MyToken {
     mod Errors {
         pub const INSUFFICIENT_PAYMENT: felt252 = 'Insufficient payment';
         pub const PAYMENT_FAILED: felt252 = 'Payment transfer failed';
-        pub const INVALID_INGREDIENT: felt252 = 'Invalid ingredient ID';
         pub const INSUFFICIENT_CASH: felt252 = 'Insufficient cash';
     }
 
@@ -267,22 +265,14 @@ mod MyToken {
         }
 
         #[external(v0)]
-        fn get_ingredient_price(self: @ContractState, ingredient_id: u32) -> u256 {
-            get_ingredient_price(ingredient_id)
-        }
-
-        #[external(v0)]
-        fn buy_ingredient(
-            ref self: ContractState, token_id: u256, ingredient_id: u32, quantity: u32,
+        fn mint_ingredient(
+            ref self: ContractState,
+            token_id: u256,
+            ingredient_id: u32,
+            quantity: u32,
+            total_cost: u256,
         ) {
-            let all_ingredients = get_all_ingredients();
-            assert(
-                ingredient_id >= 1 && ingredient_id <= all_ingredients.len(),
-                Errors::INVALID_INGREDIENT,
-            );
-
-            let price = self.get_ingredient_price(ingredient_id);
-            let total_cost = price * quantity.into();
+            self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
 
             let mut character_stats = self.characters_stats.entry(token_id).read();
             assert(character_stats.cash >= total_cost, Errors::INSUFFICIENT_CASH);
@@ -310,12 +300,13 @@ mod MyToken {
         }
 
         #[external(v0)]
-        fn get_character_ingredients(self: @ContractState, token_id: u256) -> Array<(u32, u32)> {
+        fn get_character_ingredients(
+            self: @ContractState, token_id: u256, all_ingredients_count: u32,
+        ) -> Array<(u32, u32)> {
             let mut ingredients = array![];
-            let all_ingredients = get_all_ingredients();
 
             let mut ingredient_id: u32 = 1;
-            while ingredient_id <= all_ingredients.len() {
+            while ingredient_id <= all_ingredients_count {
                 let quantity = self.character_ingredients.entry((token_id, ingredient_id)).read();
                 if quantity > 0 {
                     ingredients.append((ingredient_id, quantity));
@@ -328,21 +319,27 @@ mod MyToken {
         }
 
         #[external(v0)]
-        fn create_drug(
+        fn mint_drug(
             ref self: ContractState,
             token_id: u256,
             name: ByteArray,
             rarity: DrugRarity,
             reputation_reward: u32,
             cash_reward: u32,
-        ) {
+        ) -> u32 {
             self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
 
             let drug_id = self.drug_counter.read() + 1;
             self.drug_counter.write(drug_id);
 
             let drug = Drug {
-                id: drug_id, owner_token_id: token_id, name, rarity, reputation_reward, cash_reward,
+                id: drug_id,
+                owner_token_id: token_id,
+                name,
+                rarity,
+                reputation_reward,
+                cash_reward,
+                is_locked: false,
             };
 
             self.drugs.entry(drug_id).write(drug);
@@ -353,6 +350,8 @@ mod MyToken {
             let mut character_stats = self.characters_stats.entry(token_id).read();
             character_stats.total_drugs_created += 1;
             self.characters_stats.entry(token_id).write(character_stats);
+
+            drug_id
         }
 
         #[external(v0)]
@@ -379,6 +378,144 @@ mod MyToken {
                 i += 1;
             }
             drugs
+        }
+
+        #[external(v0)]
+        fn lock_drug(ref self: ContractState, drug_id: u32) {
+            self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
+
+            let mut drug = self.drugs.entry(drug_id).read();
+            assert(drug.id > 0, 'Drug does not exist');
+            assert(!drug.is_locked, 'Drug already locked');
+
+            drug.is_locked = true;
+            self.drugs.entry(drug_id).write(drug);
+        }
+
+        #[external(v0)]
+        fn unlock_drug(ref self: ContractState, drug_id: u32) {
+            self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
+
+            let mut drug = self.drugs.entry(drug_id).read();
+            assert(drug.id > 0, 'Drug does not exist');
+            assert(drug.is_locked, 'Drug not locked');
+
+            drug.is_locked = false;
+            self.drugs.entry(drug_id).write(drug);
+        }
+
+        #[external(v0)]
+        fn transfer_drug_ownership(
+            ref self: ContractState, drug_id: u32, new_owner_token_id: u256
+        ) {
+            self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
+
+            let mut drug = self.drugs.entry(drug_id).read();
+            assert(drug.id > 0, 'Drug does not exist');
+
+            let old_owner_token_id = drug.owner_token_id;
+
+            // Update drug ownership
+            drug.owner_token_id = new_owner_token_id;
+            self.drugs.entry(drug_id).write(drug);
+
+            // Update drug count for old owner
+            let old_count = self.character_drug_ids.entry(old_owner_token_id).read();
+            if old_count > 0 {
+                self.character_drug_ids.entry(old_owner_token_id).write(old_count - 1);
+            }
+
+            // Update drug count for new owner
+            let new_count = self.character_drug_ids.entry(new_owner_token_id).read();
+            self.character_drug_ids.entry(new_owner_token_id).write(new_count + 1);
+        }
+
+        #[external(v0)]
+        fn consume_ingredient(
+            ref self: ContractState, token_id: u256, ingredient_id: u32, quantity: u32
+        ) {
+            self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
+
+            let current_quantity = self
+                .character_ingredients
+                .entry((token_id, ingredient_id))
+                .read();
+            assert(current_quantity >= quantity, 'Insufficient ingredient');
+
+            self
+                .character_ingredients
+                .entry((token_id, ingredient_id))
+                .write(current_quantity - quantity);
+        }
+
+        #[external(v0)]
+        fn consume_drug(ref self: ContractState, drug_id: u32) {
+            self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
+
+            let mut drug = self.drugs.entry(drug_id).read();
+            assert(drug.id > 0, 'Drug does not exist');
+            assert(!drug.is_locked, 'Drug is locked');
+
+            // Remove drug from owner's count
+            let owner_count = self.character_drug_ids.entry(drug.owner_token_id).read();
+            if owner_count > 0 {
+                self.character_drug_ids.entry(drug.owner_token_id).write(owner_count - 1);
+            }
+
+            // Delete drug (set to default/zero state)
+            let zero_drug = Drug {
+                id: 0,
+                owner_token_id: 0,
+                name: "",
+                rarity: DrugRarity::Base,
+                reputation_reward: 0,
+                cash_reward: 0,
+                is_locked: false,
+            };
+            self.drugs.entry(drug_id).write(zero_drug);
+        }
+
+        #[external(v0)]
+        fn update_character_stats(
+            ref self: ContractState,
+            token_id: u256,
+            exp_gain: u16,
+            reputation_gain: u16,
+            craft_success: bool
+        ) {
+            self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
+
+            let mut character_stats = self.characters_stats.entry(token_id).read();
+
+            // Update experience
+            character_stats.experience += exp_gain;
+
+            // Update reputation (cap at 1000)
+            let new_reputation = character_stats.reputation + reputation_gain;
+            if new_reputation > 1000 {
+                character_stats.reputation = 1000;
+            } else {
+                character_stats.reputation = new_reputation;
+            }
+
+            // Update craft counts
+            if craft_success {
+                character_stats.successful_crafts += 1;
+            } else {
+                character_stats.failed_crafts += 1;
+            }
+
+            // Check for level up (simple formula: level up every 100 exp)
+            let level_threshold = (character_stats.level.into() * 100).try_into().unwrap();
+            if character_stats.experience >= level_threshold && character_stats.level < 255 {
+                character_stats.level += 1;
+                character_stats.experience = 0; // Reset exp for next level
+            }
+
+            // Update last active timestamp
+            character_stats.last_active_timestamp = starknet::get_block_timestamp();
+
+            self.characters_stats.entry(token_id).write(character_stats);
         }
     }
 

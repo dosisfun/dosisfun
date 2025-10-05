@@ -1,6 +1,6 @@
 use starknet::ContractAddress;
 
-#[derive(Drop, Serde, starknet::Store)]
+#[derive(Drop, Serde)]
 pub struct CharacterStats {
     pub owner: ContractAddress,
     pub character_name: ByteArray,
@@ -17,7 +17,7 @@ pub struct CharacterStats {
     pub is_active: bool // whether the character is currently active
 }
 
-#[derive(Drop, Serde, starknet::Store)]
+#[derive(Drop, Serde)]
 pub struct Drug {
     pub id: u32,
     pub owner_token_id: u256,
@@ -28,7 +28,7 @@ pub struct Drug {
     pub is_locked: bool,
 }
 
-#[derive(Copy, Drop, Serde, starknet::Store)]
+#[derive(Copy, Drop, Serde)]
 pub enum DrugRarity {
     #[default]
     Base,
@@ -36,18 +36,4 @@ pub enum DrugRarity {
     Rare,
     UltraRare,
     Legendary,
-}
-
-impl DrugDefault of Default<Drug> {
-    fn default() -> Drug {
-        Drug {
-            id: 0,
-            owner_token_id: 0,
-            name: "",
-            rarity: DrugRarity::Base,
-            reputation_reward: 0,
-            cash_reward: 0,
-            is_locked: false,
-        }
-    }
 }

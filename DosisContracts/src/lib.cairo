@@ -1,10 +1,13 @@
+pub mod interfaces {
+    pub mod dosis_nft;
+}
+
 pub mod models {
-    pub mod drug;
-    pub mod recipe;
+    pub mod market;
+    pub mod nft;
 }
 
 pub mod systems {
+    pub mod black_market;
     pub mod drug_crafting;
 }
-
-pub mod store;
