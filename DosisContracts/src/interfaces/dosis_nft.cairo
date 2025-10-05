@@ -20,6 +20,9 @@ pub trait IDosisNFT<TContractState> {
     fn consume_ingredient(
         ref self: TContractState, token_id: u256, ingredient_id: u32, quantity: u32,
     );
+    fn mint_ingredient(
+        ref self: TContractState, token_id: u256, ingredient_id: u32, quantity: u32, total_cost: u256,
+    );
 
     // Drug functions
     fn get_drug(self: @TContractState, drug_id: u32) -> Drug;

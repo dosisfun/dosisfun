@@ -5,6 +5,7 @@ pub trait IBlackMarket<T> {
     fn list_drug(ref self: T, nft_token_id: u256, drug_id: u32) -> u32;
     fn cancel_listing(ref self: T, nft_token_id: u256, listing_id: u32);
     fn buy_drug(ref self: T, buyer_nft_token_id: u256, listing_id: u32);
+    fn buy_ingredient(ref self: T, nft_token_id: u256, ingredient_id: u32, quantity: u32);
     fn get_listing(ref self: T, listing_id: u32) -> MarketListing;
     fn get_active_listings(ref self: T) -> Array<MarketListing>;
     fn get_seller_listings(ref self: T, nft_token_id: u256) -> Array<MarketListing>;
@@ -167,6 +168,23 @@ pub mod black_market_system {
 
             listings
         }
+
+        fn buy_ingredient(
+            ref self: ContractState, nft_token_id: u256, ingredient_id: u32, quantity: u32,
+        ) {
+            // Validate quantity
+            assert(quantity > 0, 'Quantity must be greater than 0');
+
+            // Calculate total cost
+            let unit_price = calculate_ingredient_price(ingredient_id);
+            let total_cost = unit_price * quantity.into();
+
+            // Get NFT contract dispatcher
+            let nft_contract = IDosisNFTDispatcher { contract_address: 0.try_into().unwrap() };
+
+            // Mint ingredient (this will validate cash and deduct it)
+            nft_contract.mint_ingredient(nft_token_id, ingredient_id, quantity, total_cost);
+        }
     }
 
     // Helper function to calculate price based on rarity
@@ -177,6 +195,21 @@ pub mod black_market_system {
             DrugRarity::Rare => 200, // Rare: 200 $DOSIS
             DrugRarity::UltraRare => 350, // UltraRare: 350 $DOSIS
             DrugRarity::Legendary => 500 // Legendary: 500 $DOSIS
+        }
+    }
+
+    // Helper function to calculate ingredient price based on ID
+    fn calculate_ingredient_price(ingredient_id: u32) -> u256 {
+        // Prices based on ingredient rarity/type
+        // IDs 1-10: Basic ingredients (cheap)
+        // IDs 11-20: Intermediate ingredients (medium)
+        // IDs 21-30: Advanced ingredients (expensive)
+        if ingredient_id <= 10 {
+            10 // Basic: 10 cash each
+        } else if ingredient_id <= 20 {
+            25 // Intermediate: 25 cash each
+        } else {
+            50 // Advanced: 50 cash each
         }
     }
 }
