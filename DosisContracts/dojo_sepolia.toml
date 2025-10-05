@@ -13,5 +13,6 @@ private_key = ""
 
 [writers]
 "dosis_game" = [
-    "dosis_game-drug_crafting_system"
+    "dosis_game-black_market",
+    "dosis_game-drug_crafting"
 ]
