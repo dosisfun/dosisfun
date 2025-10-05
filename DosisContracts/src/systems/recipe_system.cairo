@@ -1,19 +1,19 @@
 use dosis_game::models::recipe::{Recipe, RecipeAssert};
-use dosis_game::types::drug_type::{DrugType, DrugRarity, DrugTypeHelper, DrugRarityHelper};
-use dosis_game::types::recipe::Ingredient;
 use dosis_game::store::StoreTrait;
+use dosis_game::types::drug_type::{DrugRarity, DrugRarityHelper, DrugType, DrugTypeHelper};
+use dosis_game::types::recipe::Ingredient;
 
 #[starknet::interface]
 pub trait IRecipeSystem<T> {
     fn create_recipe(
-        ref self: T, 
-        name: felt252, 
-        drug_type: DrugType, 
+        ref self: T,
+        name: felt252,
+        drug_type: DrugType,
         rarity: DrugRarity,
         ingredients: Array<Ingredient>,
         difficulty: u8,
         base_experience: u16,
-        success_rate: u8
+        success_rate: u8,
     ) -> u32;
     fn get_recipe(ref self: T, recipe_id: u32) -> Recipe;
     fn get_all_recipes(ref self: T) -> Array<u32>;
@@ -23,9 +23,12 @@ pub trait IRecipeSystem<T> {
 
 #[dojo::contract]
 pub mod recipe_system {
-    use super::{Recipe, RecipeAssert, DrugType, DrugRarity, Ingredient, StoreTrait, IRecipeSystem, DrugTypeHelper, DrugRarityHelper};
     use starknet::get_caller_address;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use super::{
+        DrugRarity, DrugRarityHelper, DrugType, DrugTypeHelper, IRecipeSystem, Ingredient, Recipe,
+        RecipeAssert, StoreTrait,
+    };
 
     #[storage]
     struct Storage {
@@ -35,7 +38,7 @@ pub mod recipe_system {
     // Constructor
     fn dojo_init(ref self: ContractState) {
         self.recipe_counter.write(1);
-        
+
         // Initialize some default recipes
         initialize_default_recipes(ref self);
     }
@@ -43,14 +46,14 @@ pub mod recipe_system {
     #[abi(embed_v0)]
     impl RecipeSystemImpl of IRecipeSystem<ContractState> {
         fn create_recipe(
-            ref self: ContractState, 
-            name: felt252, 
-            drug_type: DrugType, 
+            ref self: ContractState,
+            name: felt252,
+            drug_type: DrugType,
             rarity: DrugRarity,
             ingredients: Array<Ingredient>,
             difficulty: u8,
             base_experience: u16,
-            success_rate: u8
+            success_rate: u8,
         ) -> u32 {
             let mut world = self.world(@"dosis_game");
             let mut store = StoreTrait::new(world);
@@ -59,7 +62,11 @@ pub mod recipe_system {
             self.recipe_counter.write(recipe_id + 1);
 
             // Validate difficulty range
-            assert(difficulty >= dosis_game::constants::MIN_RECIPE_DIFFICULTY && difficulty <= dosis_game::constants::MAX_RECIPE_DIFFICULTY, 'Invalid difficulty range');
+            assert(
+                difficulty >= dosis_game::constants::MIN_RECIPE_DIFFICULTY
+                    && difficulty <= dosis_game::constants::MAX_RECIPE_DIFFICULTY,
+                'Invalid difficulty range',
+            );
 
             let recipe = Recipe {
                 id: recipe_id.try_into().unwrap(),
@@ -67,7 +74,11 @@ pub mod recipe_system {
                 drug_type: DrugTypeHelper::to_felt252(drug_type),
                 rarity: DrugRarityHelper::to_felt252(rarity),
                 ingredient_count: ingredients.len().try_into().unwrap(),
-                primary_ingredient: if ingredients.len() > 0 { *ingredients.at(0).name } else { '' },
+                primary_ingredient: if ingredients.len() > 0 {
+                    *ingredients.at(0).name
+                } else {
+                    ''
+                },
                 difficulty,
                 base_experience,
                 success_rate,
@@ -91,7 +102,7 @@ pub mod recipe_system {
         fn get_all_recipes(ref self: ContractState) -> Array<u32> {
             let mut recipe_ids = ArrayTrait::new();
             let counter = self.recipe_counter.read();
-            
+
             // Get all recipe IDs from 1 to counter
             let max_recipes: u32 = counter.try_into().unwrap_or(1000); // Cap at 1000 for safety
             let mut i: u32 = 1;
@@ -101,8 +112,8 @@ pub mod recipe_system {
                 }
                 recipe_ids.append(i);
                 i += 1;
-            };
-            
+            }
+
             recipe_ids
         }
 
@@ -112,7 +123,7 @@ pub mod recipe_system {
 
             let mut recipe = store.read_recipe(recipe_id);
             recipe.assert_exists();
-            
+
             recipe.is_active = true;
             store.write_recipe(recipe);
         }
@@ -123,7 +134,7 @@ pub mod recipe_system {
 
             let mut recipe = store.read_recipe(recipe_id);
             recipe.assert_exists();
-            
+
             recipe.is_active = false;
             store.write_recipe(recipe);
         }
@@ -136,16 +147,8 @@ pub mod recipe_system {
 
         // Recipe 1: Basic Cocaine
         let mut cocaine_ingredients = ArrayTrait::new();
-        cocaine_ingredients.append(Ingredient {
-            name: 'coca_leaf',
-            quantity: 5,
-            purity: 90,
-        });
-        cocaine_ingredients.append(Ingredient {
-            name: 'lime',
-            quantity: 2,
-            purity: 85,
-        });
+        cocaine_ingredients.append(Ingredient { name: 'coca_leaf', quantity: 5, purity: 90 });
+        cocaine_ingredients.append(Ingredient { name: 'lime', quantity: 2, purity: 85 });
 
         let cocaine_recipe = Recipe {
             id: 1,
@@ -163,16 +166,8 @@ pub mod recipe_system {
 
         // Recipe 2: Heroin
         let mut heroin_ingredients = ArrayTrait::new();
-        heroin_ingredients.append(Ingredient {
-            name: 'poppy_sap',
-            quantity: 8,
-            purity: 95,
-        });
-        heroin_ingredients.append(Ingredient {
-            name: 'acetic_anhydride',
-            quantity: 3,
-            purity: 80,
-        });
+        heroin_ingredients.append(Ingredient { name: 'poppy_sap', quantity: 8, purity: 95 });
+        heroin_ingredients.append(Ingredient { name: 'acetic_anhydride', quantity: 3, purity: 80 });
 
         let heroin_recipe = Recipe {
             id: 2,
@@ -190,16 +185,8 @@ pub mod recipe_system {
 
         // Recipe 3: LSD
         let mut lsd_ingredients = ArrayTrait::new();
-        lsd_ingredients.append(Ingredient {
-            name: 'ergot_fungus',
-            quantity: 1,
-            purity: 99,
-        });
-        lsd_ingredients.append(Ingredient {
-            name: 'diethylamine',
-            quantity: 2,
-            purity: 95,
-        });
+        lsd_ingredients.append(Ingredient { name: 'ergot_fungus', quantity: 1, purity: 99 });
+        lsd_ingredients.append(Ingredient { name: 'diethylamine', quantity: 2, purity: 95 });
 
         let lsd_recipe = Recipe {
             id: 3,
