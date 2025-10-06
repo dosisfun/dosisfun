@@ -25,13 +25,17 @@ pub mod black_market_system {
         listing_counter: u32,
     }
 
+    fn NFT_CONTRACTS() -> ContractAddress {
+        0.try_into().unwrap()
+    }
+
     #[abi(embed_v0)]
     impl BlackMarketImpl of super::IBlackMarket<ContractState> {
         fn list_drug(ref self: ContractState, nft_token_id: u256, drug_id: u32) -> u32 {
             let mut world = self.world(@"dosis_game");
 
             // Get NFT contract dispatcher
-            let nft_contract = IDosisNFTDispatcher { contract_address: 0.try_into().unwrap() };
+            let nft_contract = IDosisNFTDispatcher { contract_address: NFT_CONTRACTS() };
 
             // Validate drug ownership and get drug info
             let drug = nft_contract.get_drug(drug_id);
@@ -75,7 +79,7 @@ pub mod black_market_system {
             assert(listing.seller_nft_token_id == nft_token_id, 'Not listing owner');
 
             // Unlock drug
-            let nft_contract = IDosisNFTDispatcher { contract_address: 0.try_into().unwrap() };
+            let nft_contract = IDosisNFTDispatcher { contract_address: NFT_CONTRACTS() };
             nft_contract.unlock_drug(listing.drug_id);
 
             // Deactivate listing
@@ -94,7 +98,7 @@ pub mod black_market_system {
             // Validate buyer is not seller
             assert(listing.seller_nft_token_id != buyer_nft_token_id, 'Cannot buy own drug');
 
-            let nft_contract = IDosisNFTDispatcher { contract_address: 0.try_into().unwrap() };
+            let nft_contract = IDosisNFTDispatcher { contract_address: NFT_CONTRACTS() };
 
             // TODO: Validate and transfer $DOSIS tokens from buyer to seller
             // This will be implemented when ERC20 $DOSIS token is ready
@@ -180,7 +184,7 @@ pub mod black_market_system {
             let total_cost = unit_price * quantity.into();
 
             // Get NFT contract dispatcher
-            let nft_contract = IDosisNFTDispatcher { contract_address: 0.try_into().unwrap() };
+            let nft_contract = IDosisNFTDispatcher { contract_address: NFT_CONTRACTS() };
 
             // Mint ingredient (this will validate cash and deduct it)
             nft_contract.mint_ingredient(nft_token_id, ingredient_id, quantity, total_cost);

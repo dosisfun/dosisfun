@@ -186,7 +186,7 @@ mod MyToken {
                     CharacterStats {
                         owner: to,
                         character_name,
-                        cash: 0,
+                        cash: 9999999999, // TODO:
                         level: 0,
                         experience: 0,
                         reputation: 0,
@@ -202,13 +202,13 @@ mod MyToken {
         }
 
         #[external(v0)]
-        fn public_mint(ref self: ContractState) {
+        fn public_mint(ref self: ContractState, character_name: ByteArray) {
             let caller = get_caller_address();
-            self.public_mint_to(caller)
+            self.public_mint_to(caller, character_name)
         }
 
         #[external(v0)]
-        fn public_mint_to(ref self: ContractState, to: ContractAddress) {
+        fn public_mint_to(ref self: ContractState, to: ContractAddress, character_name: ByteArray) {
             let caller = get_caller_address();
             let mint_price = self.mint_price.read();
             let treasury = self.treasury_address.read();
@@ -229,7 +229,28 @@ mod MyToken {
             let token_id = total_supply + 1;
             self.total_supply.write(token_id);
 
-            self.erc721.safe_mint(to, token_id, [].span())
+            self.erc721.safe_mint(to, token_id, [].span());
+
+            self
+                .characters_stats
+                .entry(token_id)
+                .write(
+                    CharacterStats {
+                        owner: to,
+                        character_name,
+                        cash: 9999999999, // TODO:
+                        level: 0,
+                        experience: 0,
+                        reputation: 0,
+                        total_drugs_created: 0,
+                        successful_crafts: 0,
+                        failed_crafts: 0,
+                        creation_timestamp: 0,
+                        last_active_timestamp: 0,
+                        is_minted: true,
+                        is_active: true,
+                    },
+                );
         }
 
         #[external(v0)]
@@ -406,7 +427,7 @@ mod MyToken {
 
         #[external(v0)]
         fn transfer_drug_ownership(
-            ref self: ContractState, drug_id: u32, new_owner_token_id: u256
+            ref self: ContractState, drug_id: u32, new_owner_token_id: u256,
         ) {
             self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
 
@@ -432,7 +453,7 @@ mod MyToken {
 
         #[external(v0)]
         fn consume_ingredient(
-            ref self: ContractState, token_id: u256, ingredient_id: u32, quantity: u32
+            ref self: ContractState, token_id: u256, ingredient_id: u32, quantity: u32,
         ) {
             self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
 
@@ -481,7 +502,7 @@ mod MyToken {
             token_id: u256,
             exp_gain: u16,
             reputation_gain: u16,
-            craft_success: bool
+            craft_success: bool,
         ) {
             self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
 
