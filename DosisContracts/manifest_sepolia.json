@@ -1852,7 +1852,7 @@
     },
     {
       "address": "0x39bac50ef12e353e02053be1c8190c716a224a05d2438aad07c986c08817b60",
-      "class_hash": "0x57f58cbdc4c448290f6fa5f199d5caac8f29f06c35e3ed161a84a4265e74920",
+      "class_hash": "0x259c11024af300dc15042a3b508ac2ddc1403457dca5b59a3444e22bb13c66e",
       "abi": [
         {
           "type": "impl",

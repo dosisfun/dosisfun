@@ -66,7 +66,8 @@ pub mod drug_crafting_system {
             let success_rate = calculate_success_rate(
                 character_stats.level, 10,
             ); // TODO: Change to actual difficulty
-            let crafting_result = simulate_crafting(success_rate);
+            // let crafting_result = simulate_crafting(success_rate);
+            let crafting_result = CraftingResult::Success;
 
             // Consume ingredients
             let mut k: u32 = 0;
@@ -102,7 +103,7 @@ pub mod drug_crafting_system {
 
                     // Create drug in NFT contract
                     let drug_id = nft_contract
-                        .create_drug(nft_token_id, name, rarity, reputation_reward, cash_reward);
+                        .mint_drug(nft_token_id, name, rarity, reputation_reward, cash_reward);
 
                     // Calculate experience gain
                     let exp_gain = calculate_experience_gain(
@@ -143,18 +144,17 @@ pub mod drug_crafting_system {
     fn simulate_crafting(success_rate: u8) -> CraftingResult {
         let random_value = get_block_timestamp() % 100;
 
-        // if random_value < 2 {
-        //     CraftingResult::CriticalFailure
-        // } else if random_value < 20 {
-        //     CraftingResult::Failure
-        // } else if random_value < success_rate.into() {
-        //     CraftingResult::Success
-        // } else if random_value >= 95 {
-        //     CraftingResult::CriticalSuccess
-        // } else {
-        //     CraftingResult::Failure
-        // }
-        CraftingResult::CriticalSuccess
+        if random_value < 2 {
+            CraftingResult::CriticalFailure
+        } else if random_value < 20 {
+            CraftingResult::Failure
+        } else if random_value < success_rate.into() {
+            CraftingResult::Success
+        } else if random_value >= 95 {
+            CraftingResult::CriticalSuccess
+        } else {
+            CraftingResult::Failure
+        }
     }
 
     fn get_rarity_from_recipe(recipe_rarity: felt252) -> DrugRarity {

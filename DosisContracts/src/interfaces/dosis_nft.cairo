@@ -26,7 +26,7 @@ pub trait IDosisNFT<TContractState> {
 
     // Drug functions
     fn get_drug(self: @TContractState, drug_id: u32) -> Drug;
-    fn create_drug(
+    fn mint_drug(
         ref self: TContractState,
         token_id: u256,
         name: ByteArray,
