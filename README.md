@@ -2,11 +2,14 @@ Hecho:
 * mint
 * comprar ingredientes
 * craftear la droga
-* marketplace 
+* marketplace (listar, comprar, cancelar)
 
 Falta:
-* leaderboard
-* jefe
+* Bug con los enum por el rarity de la droga
+* Mejorar la funcion para calcular los stats de una droga
+* VRF
+* Leaderboard
+* Jefe
 
 # NFT CONTRACTS 0x02232fb520090d5c76d8d84de9829eea7c34c5e6234a5a2a8b178d18e2aedbd7
 Contrato Cairo
