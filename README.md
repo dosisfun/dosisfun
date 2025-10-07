@@ -32,8 +32,6 @@ fn consume_ingredient - rol: DOSIS_CONTRACT
 fn consume_drug - rol: DOSIS_CONTRACT
 fn update_character_stats - rol: DOSIS_CONTRACT
 
-
-
 # DOSIS CONTRACTS
 Contrato Dojo
 

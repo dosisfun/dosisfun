@@ -16,6 +16,14 @@ pub mod drug_crafting_system {
     use crate::models::nft::DrugRarity;
     use crate::constants::NFT_CONTRACTS;
 
+    mod Errors {
+        pub const NOT_OWNER: felt252 = 'Not owner';
+        pub const CHARACTER_NOT_ACTIVE: felt252 = 'Character not active';
+        pub const INSUFFICIENT_BASE_INGREDIENT: felt252 = 'Insufficient base ingredient';
+        pub const NOT_DRUG_OWNER: felt252 = 'Not drug owner';
+        pub const DRUG_INGREDIENT_LOCKED: felt252 = 'Drug ingredient is locked';
+    }
+
     #[derive(Drop, Serde, Copy)]
     pub enum CraftingResult {
         CriticalFailure,
@@ -40,15 +48,15 @@ pub mod drug_crafting_system {
 
             // Get character stats
             let character_stats = nft_contract.get_character_stats(nft_token_id);
-            assert(character_stats.owner == get_caller_address(), 'Not owner');
-            assert(character_stats.is_active, 'Character not active');
+            assert(character_stats.owner == get_caller_address(), Errors::NOT_OWNER);
+            assert(character_stats.is_active, Errors::CHARACTER_NOT_ACTIVE);
 
             // Validate base ingredients
             let mut i: u32 = 0;
             while i < base_ingredients.len() {
                 let (ingredient_id, required_quantity) = *base_ingredients.at(i);
                 let available_quantity = nft_contract.get_character_ingredient(nft_token_id, ingredient_id);
-                assert(available_quantity >= required_quantity, 'Insufficient base ingredient');
+                assert(available_quantity >= required_quantity, Errors::INSUFFICIENT_BASE_INGREDIENT);
                 i += 1;
             }
 
@@ -57,8 +65,8 @@ pub mod drug_crafting_system {
             while j < drug_ingredient_ids.len() {
                 let drug_id = *drug_ingredient_ids.at(j);
                 let drug = nft_contract.get_drug(drug_id);
-                assert(drug.owner_token_id == nft_token_id, 'Not drug owner');
-                assert(!drug.is_locked, 'Drug ingredient is locked');
+                assert(drug.owner_token_id == nft_token_id, Errors::NOT_DRUG_OWNER);
+                assert(!drug.is_locked, Errors::DRUG_INGREDIENT_LOCKED);
                 j += 1;
             }
 

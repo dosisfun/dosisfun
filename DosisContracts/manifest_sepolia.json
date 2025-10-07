@@ -1479,8 +1479,8 @@
   },
   "contracts": [
     {
-      "address": "0x434fec0d47fd0307ce80b32160e4a644e97463f1420acc1161e690acedb3703",
-      "class_hash": "0x2f34b7ad5a18ba68b29f09b42c310d79016d1df53f5346bf5297b3ae7251f85",
+      "address": "0x4c61c998b9b524cc646d1cf508476e287d4f2f60395932f3368cf6278d3c75a",
+      "class_hash": "0x6575220b2d1d9fbe1093ad8e5bf4927f21db16108c8cf0e5a8d125bcced795f",
       "abi": [
         {
           "type": "impl",
@@ -1840,8 +1840,8 @@
         }
       ],
       "init_calldata": [],
-      "tag": "dosis_game1-black_market_system",
-      "selector": "0x360165eadf442e62c6bae0c74393ae298904e1689b3f1a0ceab20bf80ad7aaf",
+      "tag": "dosis_game2-black_market_system",
+      "selector": "0x33d4526632116c3ea057269b8d00fe248bfd395ab875d3185e42fff5c26d157",
       "systems": [
         "list_drug",
         "cancel_listing",
@@ -1851,8 +1851,8 @@
       ]
     },
     {
-      "address": "0x39bac50ef12e353e02053be1c8190c716a224a05d2438aad07c986c08817b60",
-      "class_hash": "0x259c11024af300dc15042a3b508ac2ddc1403457dca5b59a3444e22bb13c66e",
+      "address": "0x3d469f506db8c193f26795b2688a453f683a39caefd2d868146391493126d7e",
+      "class_hash": "0x5a35d6b2e9b44fea8cc2c6d98cce257b81c8d6239331274638a51d9930d728b",
       "abi": [
         {
           "type": "impl",
@@ -1940,8 +1940,8 @@
                   "type": "core::byte_array::ByteArray"
                 },
                 {
-                  "name": "base_ingredient_ids",
-                  "type": "core::array::Array::<core::integer::u32>"
+                  "name": "base_ingredients",
+                  "type": "core::array::Array::<(core::integer::u32, core::integer::u32)>"
                 },
                 {
                   "name": "drug_ingredient_ids",
@@ -2069,8 +2069,8 @@
         }
       ],
       "init_calldata": [],
-      "tag": "dosis_game1-drug_crafting_system",
-      "selector": "0x6222551bcad5d567b3db17751aa0c6ba1db2f9da74c6a803b4cfcceffe26c10",
+      "tag": "dosis_game2-drug_crafting_system",
+      "selector": "0x508d243d874a17ec30f084718c0083dc5d9fc9c3c0bf35388f7034fa3504878",
       "systems": [
         "craft_drug",
         "upgrade"
@@ -2082,8 +2082,8 @@
     {
       "members": [],
       "class_hash": "0x357592a05ee57e76dc36fbe1a9eaab4e24d3409c6e9e0bc7a9f345f45141e94",
-      "tag": "dosis_game1-MarketListing",
-      "selector": "0x453d71ea47804e2d8d23edbd3aa7002a1bdc7e2052b5f57b7cc12ec7d5d9299"
+      "tag": "dosis_game2-MarketListing",
+      "selector": "0x38df668b3e3d3f8e43330883dc5e23b2ab27f76a8770ba910bd7b68edb327a0"
     }
   ],
   "events": [],

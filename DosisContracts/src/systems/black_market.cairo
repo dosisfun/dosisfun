@@ -21,6 +21,14 @@ pub mod black_market_system {
     use crate::models::market::{AssertTrait, MarketListing};
     use crate::constants::{NFT_CONTRACTS, NAMESPACE};
 
+    mod Errors {
+        pub const NOT_DRUG_OWNER: felt252 = 'Not drug owner';
+        pub const DRUG_IS_LOCKED: felt252 = 'Drug is locked';
+        pub const NOT_LISTING_OWNER: felt252 = 'Not listing owner';
+        pub const CANNOT_BUY_OWN_DRUG: felt252 = 'Cannot buy own drug';
+        pub const INVALID_QUANTITY: felt252 = 'Quantity must be greater than 0';
+    }
+
     #[storage]
     struct Storage {
         listing_counter: u32,
@@ -36,8 +44,8 @@ pub mod black_market_system {
 
             // Validate drug ownership and get drug info
             let drug = nft_contract.get_drug(drug_id);
-            assert(drug.owner_token_id == nft_token_id, 'Not drug owner');
-            assert(!drug.is_locked, 'Drug is locked');
+            assert(drug.owner_token_id == nft_token_id, Errors::NOT_DRUG_OWNER);
+            assert(!drug.is_locked, Errors::DRUG_IS_LOCKED);
 
             // Calculate price based on rarity
             let price = calculate_price_by_rarity(drug.rarity);
@@ -73,7 +81,7 @@ pub mod black_market_system {
             listing.assert_active();
 
             // Validate ownership
-            assert(listing.seller_nft_token_id == nft_token_id, 'Not listing owner');
+            assert(listing.seller_nft_token_id == nft_token_id, Errors::NOT_LISTING_OWNER);
 
             // Unlock drug
             let nft_contract = IDosisNFTDispatcher { contract_address: NFT_CONTRACTS() };
@@ -93,7 +101,7 @@ pub mod black_market_system {
             listing.assert_active();
 
             // Validate buyer is not seller
-            assert(listing.seller_nft_token_id != buyer_nft_token_id, 'Cannot buy own drug');
+            assert(listing.seller_nft_token_id != buyer_nft_token_id, Errors::CANNOT_BUY_OWN_DRUG);
 
             let nft_contract = IDosisNFTDispatcher { contract_address: NFT_CONTRACTS() };
 
@@ -177,7 +185,7 @@ pub mod black_market_system {
             ref self: ContractState, nft_token_id: u256, ingredient_id: u32, quantity: u32,
         ) {
             // Validate quantity
-            assert(quantity > 0, 'Quantity must be greater than 0');
+            assert(quantity > 0, Errors::INVALID_QUANTITY);
 
             // Calculate total cost
             let unit_price = calculate_ingredient_price(ingredient_id);
