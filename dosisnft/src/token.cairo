@@ -93,6 +93,11 @@ mod MyToken {
         pub const INSUFFICIENT_PAYMENT: felt252 = 'Insufficient payment';
         pub const PAYMENT_FAILED: felt252 = 'Payment transfer failed';
         pub const INSUFFICIENT_CASH: felt252 = 'Insufficient cash';
+        pub const DRUG_NOT_EXIST: felt252 = 'Drug does not exist';
+        pub const DRUG_ALREADY_LOCKED: felt252 = 'Drug already locked';
+        pub const DRUG_NOT_LOCKED: felt252 = 'Drug not locked';
+        pub const DRUG_IS_LOCKED: felt252 = 'Drug is locked';
+        pub const INSUFFICIENT_INGREDIENT: felt252 = 'Insufficient ingredient';
     }
 
     const STRK_ADDRESS: felt252 =
@@ -405,8 +410,8 @@ mod MyToken {
             self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
 
             let mut drug = self.drugs.entry(drug_id).read();
-            assert(drug.id > 0, 'Drug does not exist');
-            assert(!drug.is_locked, 'Drug already locked');
+            assert(drug.id > 0, Errors::DRUG_NOT_EXIST);
+            assert(!drug.is_locked, Errors::DRUG_ALREADY_LOCKED);
 
             drug.is_locked = true;
             self.drugs.entry(drug_id).write(drug);
@@ -417,8 +422,8 @@ mod MyToken {
             self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
 
             let mut drug = self.drugs.entry(drug_id).read();
-            assert(drug.id > 0, 'Drug does not exist');
-            assert(drug.is_locked, 'Drug not locked');
+            assert(drug.id > 0, Errors::DRUG_NOT_EXIST);
+            assert(drug.is_locked, Errors::DRUG_NOT_LOCKED);
 
             drug.is_locked = false;
             self.drugs.entry(drug_id).write(drug);
@@ -431,7 +436,7 @@ mod MyToken {
             self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
 
             let mut drug = self.drugs.entry(drug_id).read();
-            assert(drug.id > 0, 'Drug does not exist');
+            assert(drug.id > 0, Errors::DRUG_NOT_EXIST);
 
             let old_owner_token_id = drug.owner_token_id;
 
@@ -460,7 +465,7 @@ mod MyToken {
                 .character_ingredients
                 .entry((token_id, ingredient_id))
                 .read();
-            assert(current_quantity >= quantity, 'Insufficient ingredient');
+            assert(current_quantity >= quantity, Errors::INSUFFICIENT_INGREDIENT);
 
             self
                 .character_ingredients
@@ -473,8 +478,8 @@ mod MyToken {
             self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
 
             let mut drug = self.drugs.entry(drug_id).read();
-            assert(drug.id > 0, 'Drug does not exist');
-            assert(!drug.is_locked, 'Drug is locked');
+            assert(drug.id > 0, Errors::DRUG_NOT_EXIST);
+            assert(!drug.is_locked, Errors::DRUG_IS_LOCKED);
 
             // Remove drug from owner's count
             let owner_count = self.character_drug_ids.entry(drug.owner_token_id).read();
@@ -499,40 +504,27 @@ mod MyToken {
         fn update_character_stats(
             ref self: ContractState,
             token_id: u256,
-            exp_gain: u16,
-            reputation_gain: u16,
+            cash: u256,
+            level: u8,
+            experience: u16,
+            reputation: u16,
             craft_success: bool,
         ) {
             self.accesscontrol.assert_only_role(DOSIS_CONTRACT_ROLE);
 
             let mut character_stats = self.characters_stats.entry(token_id).read();
 
-            // Update experience
-            character_stats.experience += exp_gain;
+            character_stats.cash += cash;
+            character_stats.level += level;
+            character_stats.experience += experience;
+            character_stats.reputation += experience;
 
-            // Update reputation (cap at 1000)
-            let new_reputation = character_stats.reputation + reputation_gain;
-            if new_reputation > 1000 {
-                character_stats.reputation = 1000;
-            } else {
-                character_stats.reputation = new_reputation;
-            }
-
-            // Update craft counts
             if craft_success {
                 character_stats.successful_crafts += 1;
             } else {
                 character_stats.failed_crafts += 1;
             }
-
-            // Check for level up (simple formula: level up every 100 exp)
-            let level_threshold = (character_stats.level.into() * 100).try_into().unwrap();
-            if character_stats.experience >= level_threshold && character_stats.level < 255 {
-                character_stats.level += 1;
-                character_stats.experience = 0; // Reset exp for next level
-            }
-
-            // Update last active timestamp
+            
             character_stats.last_active_timestamp = starknet::get_block_timestamp();
 
             self.characters_stats.entry(token_id).write(character_stats);
