@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Compatible with OpenZeppelin Contracts for Cairo ^2.0.0
 
-const DEFAULT_ADMIN_ROLE: felt252 = selector!("DEFAULT_ADMIN_ROLE");
 const DOSIS_CONTRACT_ROLE: felt252 = selector!("DOSIS_CONTRACT_ROLE");
 const MINT_ROLE: felt252 = selector!("MINT_ROLE");
 
 #[starknet::contract]
 mod MyToken {
-    use openzeppelin::access::accesscontrol::AccessControlComponent;
+    use openzeppelin::access::accesscontrol::{AccessControlComponent, DEFAULT_ADMIN_ROLE};
     use openzeppelin::introspection::src5::SRC5Component;
     use openzeppelin::security::pausable::PausableComponent;
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
@@ -21,7 +20,7 @@ mod MyToken {
     use starknet::{ClassHash, ContractAddress, get_caller_address};
     use crate::formater::create_metadata;
     use crate::models::{CharacterStats, Drug, DrugRarity};
-    use super::{DEFAULT_ADMIN_ROLE, DOSIS_CONTRACT_ROLE, MINT_ROLE};
+    use super::{DOSIS_CONTRACT_ROLE, MINT_ROLE};
 
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);

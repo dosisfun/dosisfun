@@ -14,6 +14,7 @@ pub mod drug_crafting_system {
     use starknet::{get_block_timestamp, get_caller_address};
     use crate::interfaces::dosis_nft::{IDosisNFTDispatcher, IDosisNFTDispatcherTrait};
     use crate::models::nft::DrugRarity;
+    use crate::constants::NFT_CONTRACTS;
 
     #[derive(Drop, Serde, Copy)]
     pub enum CraftingResult {
@@ -34,7 +35,7 @@ pub mod drug_crafting_system {
         ) {
             // Get NFT contract
             let nft_contract = IDosisNFTDispatcher {
-                contract_address: 0.try_into().unwrap() // TODO: Change to actual address
+                contract_address: NFT_CONTRACTS()
             };
 
             // Get character stats
@@ -142,17 +143,18 @@ pub mod drug_crafting_system {
     fn simulate_crafting(success_rate: u8) -> CraftingResult {
         let random_value = get_block_timestamp() % 100;
 
-        if random_value < 2 {
-            CraftingResult::CriticalFailure
-        } else if random_value < 20 {
-            CraftingResult::Failure
-        } else if random_value < success_rate.into() {
-            CraftingResult::Success
-        } else if random_value >= 95 {
-            CraftingResult::CriticalSuccess
-        } else {
-            CraftingResult::Failure
-        }
+        // if random_value < 2 {
+        //     CraftingResult::CriticalFailure
+        // } else if random_value < 20 {
+        //     CraftingResult::Failure
+        // } else if random_value < success_rate.into() {
+        //     CraftingResult::Success
+        // } else if random_value >= 95 {
+        //     CraftingResult::CriticalSuccess
+        // } else {
+        //     CraftingResult::Failure
+        // }
+        CraftingResult::CriticalSuccess
     }
 
     fn get_rarity_from_recipe(recipe_rarity: felt252) -> DrugRarity {

@@ -11,3 +11,5 @@ pub mod systems {
     pub mod black_market;
     pub mod drug_crafting;
 }
+
+pub mod constants;

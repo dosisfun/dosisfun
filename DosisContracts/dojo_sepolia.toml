@@ -4,15 +4,15 @@ description = "Dosis Game."
 seed = "dosis_game"
 
 [namespace]
-default = "dosis_game"
+default = "dosis_game1"
 
 [env]
 rpc_url = "https://api.cartridge.gg/x/starknet/sepolia"
-account_address = ""
-private_key = ""
+account_address = "0x00dba4d5ba495338b74aceac92ddc26afff9319d675e09db0aadba40cc606245"
+private_key = "0x06c3f4d5e62d4b873a1389cec6671a9ef3414af6321d893bdf3967bc9c77fa47"
 
 [writers]
-"dosis_game" = [
-    "dosis_game-black_market",
-    "dosis_game-drug_crafting"
+"dosis_game1" = [
+    "dosis_game1-black_market_system",
+    "dosis_game1-drug_crafting_system"
 ]

@@ -6,9 +6,9 @@ pub trait IBlackMarket<T> {
     fn cancel_listing(ref self: T, nft_token_id: u256, listing_id: u32);
     fn buy_drug(ref self: T, buyer_nft_token_id: u256, listing_id: u32);
     fn buy_ingredient(ref self: T, nft_token_id: u256, ingredient_id: u32, quantity: u32);
-    fn get_listing(ref self: T, listing_id: u32) -> MarketListing;
-    fn get_active_listings(ref self: T) -> Array<MarketListing>;
-    fn get_seller_listings(ref self: T, nft_token_id: u256) -> Array<MarketListing>;
+    fn get_listing(self: @T, listing_id: u32) -> MarketListing;
+    fn get_active_listings(self: @T) -> Array<MarketListing>;
+    fn get_seller_listings(self: @T, nft_token_id: u256) -> Array<MarketListing>;
 }
 
 #[dojo::contract]
@@ -19,20 +19,17 @@ pub mod black_market_system {
     use starknet::get_block_timestamp;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use crate::models::market::{AssertTrait, MarketListing};
+    use crate::constants::{NFT_CONTRACTS, NAMESPACE};
 
     #[storage]
     struct Storage {
         listing_counter: u32,
     }
 
-    fn NFT_CONTRACTS() -> ContractAddress {
-        0.try_into().unwrap()
-    }
-
     #[abi(embed_v0)]
     impl BlackMarketImpl of super::IBlackMarket<ContractState> {
         fn list_drug(ref self: ContractState, nft_token_id: u256, drug_id: u32) -> u32 {
-            let mut world = self.world(@"dosis_game");
+            let mut world = self.world(NAMESPACE());
 
             // Get NFT contract dispatcher
             let nft_contract = IDosisNFTDispatcher { contract_address: NFT_CONTRACTS() };
@@ -68,7 +65,7 @@ pub mod black_market_system {
         }
 
         fn cancel_listing(ref self: ContractState, nft_token_id: u256, listing_id: u32) {
-            let mut world = self.world(@"dosis_game");
+            let mut world = self.world(NAMESPACE());
 
             // Get listing
             let mut listing: MarketListing = world.read_model(listing_id);
@@ -88,7 +85,7 @@ pub mod black_market_system {
         }
 
         fn buy_drug(ref self: ContractState, buyer_nft_token_id: u256, listing_id: u32) {
-            let mut world = self.world(@"dosis_game");
+            let mut world = self.world(NAMESPACE());
 
             // Get listing
             let mut listing: MarketListing = world.read_model(listing_id);
@@ -128,15 +125,15 @@ pub mod black_market_system {
             world.write_model(@listing);
         }
 
-        fn get_listing(ref self: ContractState, listing_id: u32) -> MarketListing {
-            let mut world = self.world(@"dosis_game");
+        fn get_listing(self: @ContractState, listing_id: u32) -> MarketListing {
+            let mut world = self.world(NAMESPACE());
             let listing: MarketListing = world.read_model(listing_id);
             listing.assert_exists();
             listing
         }
 
-        fn get_active_listings(ref self: ContractState) -> Array<MarketListing> {
-            let mut world = self.world(@"dosis_game");
+        fn get_active_listings(self: @ContractState) -> Array<MarketListing> {
+            let mut world = self.world(NAMESPACE());
             let mut listings = array![];
 
             let total_listings = self.listing_counter.read();
@@ -154,9 +151,9 @@ pub mod black_market_system {
         }
 
         fn get_seller_listings(
-            ref self: ContractState, nft_token_id: u256,
+            self: @ContractState, nft_token_id: u256,
         ) -> Array<MarketListing> {
-            let mut world = self.world(@"dosis_game");
+            let mut world = self.world(NAMESPACE());
             let mut listings = array![];
 
             let total_listings = self.listing_counter.read();
