@@ -4,7 +4,7 @@ pub trait IDrugCrafting<T> {
         ref self: T,
         nft_token_id: u256,
         name: ByteArray,
-        base_ingredient_ids: Array<u32>,
+        base_ingredients: Array<(u32, u32)>,
         drug_ingredient_ids: Array<u32>,
     );
 }
@@ -30,7 +30,7 @@ pub mod drug_crafting_system {
             ref self: ContractState,
             nft_token_id: u256,
             name: ByteArray,
-            base_ingredient_ids: Array<u32>,
+            base_ingredients: Array<(u32, u32)>,
             drug_ingredient_ids: Array<u32>,
         ) {
             // Get NFT contract
@@ -45,10 +45,10 @@ pub mod drug_crafting_system {
 
             // Validate base ingredients
             let mut i: u32 = 0;
-            while i < base_ingredient_ids.len() {
-                let ingredient_id = *base_ingredient_ids.at(i);
-                let quantity = nft_contract.get_character_ingredient(nft_token_id, ingredient_id);
-                assert(quantity > 0, 'Insufficient base ingredient');
+            while i < base_ingredients.len() {
+                let (ingredient_id, required_quantity) = *base_ingredients.at(i);
+                let available_quantity = nft_contract.get_character_ingredient(nft_token_id, ingredient_id);
+                assert(available_quantity >= required_quantity, 'Insufficient base ingredient');
                 i += 1;
             }
 
@@ -63,17 +63,17 @@ pub mod drug_crafting_system {
             }
 
             // Calculate crafting success
-            let success_rate = calculate_success_rate(
+            let _success_rate = calculate_success_rate(
                 character_stats.level, 10,
             ); // TODO: Change to actual difficulty
-            // let crafting_result = simulate_crafting(success_rate);
+            // let crafting_result = simulate_crafting(_success_rate);
             let crafting_result = CraftingResult::Success;
 
             // Consume ingredients
             let mut k: u32 = 0;
-            while k < base_ingredient_ids.len() {
-                let ingredient_id = *base_ingredient_ids.at(k);
-                nft_contract.consume_ingredient(nft_token_id, ingredient_id, 1);
+            while k < base_ingredients.len() {
+                let (ingredient_id, quantity) = *base_ingredients.at(k);
+                nft_contract.consume_ingredient(nft_token_id, ingredient_id, quantity);
                 k += 1;
             }
 
@@ -112,13 +112,27 @@ pub mod drug_crafting_system {
                     let rep_gain = calculate_reputation_gain(rarity, purity);
 
                     // Update character stats
-                    nft_contract.update_character_stats(nft_token_id, exp_gain, rep_gain, true);
+                    nft_contract.update_character_stats(
+                        nft_token_id,
+                        0, // cash (not added directly on crafting)
+                        0, // level (will be calculated in contract)
+                        exp_gain,
+                        rep_gain,
+                        true, // craft_success
+                    );
                     drug_id
                 },
                 CraftingResult::Failure |
                 CraftingResult::CriticalFailure => {
                     // Update character stats with failure
-                    nft_contract.update_character_stats(nft_token_id, 1, 0, false);
+                    nft_contract.update_character_stats(
+                        nft_token_id,
+                        0, // cash
+                        0, // level
+                        1, // minimal experience
+                        0, // reputation
+                        false, // craft_success
+                    );
                     0
                 },
             };

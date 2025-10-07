@@ -112,10 +112,13 @@ pub mod black_market_system {
 
             // Reward seller with reputation and cash from drug
             nft_contract
-                .add_cash_and_reputation(
+                .update_character_stats(
                     listing.seller_nft_token_id,
                     drug.cash_reward.into(),
+                    0, // level
+                    0, // experience
                     drug.reputation_reward.try_into().unwrap(),
+                    true, // craft_success (successful sale)
                 );
 
             // Update listing

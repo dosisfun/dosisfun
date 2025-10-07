@@ -7,14 +7,12 @@ pub trait IDosisNFT<TContractState> {
     fn update_character_stats(
         ref self: TContractState,
         token_id: u256,
-        exp_gain: u16,
-        reputation_gain: u16,
+        cash: u256,
+        level: u8,
+        experience: u16,
+        reputation: u16,
         craft_success: bool,
     );
-    fn add_cash_and_reputation(
-        ref self: TContractState, token_id: u256, cash: u256, reputation: u16,
-    );
-
     // Ingredient functions
     fn get_character_ingredient(self: @TContractState, token_id: u256, ingredient_id: u32) -> u32;
     fn consume_ingredient(
