@@ -1,22 +1,23 @@
 /**
  * Contract addresses and configuration
+ * All values are loaded from environment variables
  */
 
 // DOSIS NFT Contract (Sepolia)
-export const DOSIS_NFT_ADDRESS = '0x05bb9c4d7f7b422c281c65e8310da8a753562f274066ad3a6db48447cba2df91';
+export const DOSIS_NFT_ADDRESS = process.env.EXPO_PUBLIC_DOSIS_NFT_CONTRACT || '';
 
 // Voyager API endpoints
-export const VOYAGER_BASE_URL = 'https://sepolia.voyager.online/api';
+export const VOYAGER_BASE_URL = process.env.EXPO_PUBLIC_VOYAGER_BASE_URL || '';
 
 // IPFS Gateway
-export const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
+export const IPFS_GATEWAY = process.env.EXPO_PUBLIC_IPFS_GATEWAY || '';
 
 // Network configuration
 export const NETWORK_CONFIG = {
   sepolia: {
     name: 'Starknet Sepolia',
     chainId: '0x534e5f5345504f4c4941',
-    rpcUrl: 'https://starknet-sepolia.public.blastapi.io/rpc/v0_7',
-    explorerUrl: 'https://sepolia.voyager.online'
+    rpcUrl: process.env.EXPO_PUBLIC_STARKNET_RPC_URL || '',
+    explorerUrl: process.env.EXPO_PUBLIC_VOYAGER_EXPLORER_URL || ''
   }
 };

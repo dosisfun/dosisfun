@@ -1,12 +1,15 @@
 /**
- * API service for fetching NFTs using Voyager
- * This replaces the need for a Next.js API route in React Native
+ * API service for fetching NFTs using Voyager blockchain explorer
+ * This handles the bulk balance endpoint for fetching NFTs owned by addresses
+ *
+ * Note: This endpoint does NOT include character attributes/stats.
+ * For individual NFT details with character state, use character-state.ts
  */
 
-import { VoyagerNFT, VoyagerNFTResponse } from '../../types/voyager';
+import { DosisNFT, DosisNFTResponse } from '../../types/dosis';
+import { VOYAGER_BASE_URL, DOSIS_NFT_ADDRESS } from '../../constants/contracts';
 
-const VOYAGER_BASE_URL = 'https://sepolia.voyager.online/api';
-const DOSIS_NFT_CONTRACT = '0x05bb9c4d7f7b422c281c65e8310da8a753562f274066ad3a6db48447cba2df91';
+const DOSIS_NFT_CONTRACT = DOSIS_NFT_ADDRESS;
 
 interface VoyagerNFTItem {
   contract_address: string;
@@ -27,9 +30,9 @@ interface VoyagerBalanceResponse {
 /**
  * Fetch NFTs for multiple addresses using Voyager API
  */
-export async function fetchNFTsByAddresses(addresses: string[]): Promise<VoyagerNFTResponse> {
+export async function fetchNFTsByAddresses(addresses: string[]): Promise<DosisNFTResponse> {
   try {
-    const allNFTs: VoyagerNFT[] = [];
+    const allNFTs: DosisNFT[] = [];
     
     for (const address of addresses) {
       try {
@@ -57,7 +60,7 @@ export async function fetchNFTsByAddresses(addresses: string[]): Promise<Voyager
 
         // Transform NFTs to our format
         for (const nftItem of dosisNFTs) {
-          const transformedNFT: VoyagerNFT = {
+          const transformedNFT: DosisNFT = {
             contract_address: nftItem.contract_address,
             token_id: nftItem.token_id,
             name: nftItem.token_name || `DOSIS NFT #${nftItem.token_id}`,
@@ -94,7 +97,7 @@ export async function fetchNFTsByAddresses(addresses: string[]): Promise<Voyager
 /**
  * Fetch NFTs for a single address
  */
-export async function fetchNFTsByAddress(address: string): Promise<VoyagerNFT[]> {
+export async function fetchNFTsByAddress(address: string): Promise<DosisNFT[]> {
   const response = await fetchNFTsByAddresses([address]);
   return response.ownedNfts;
 }

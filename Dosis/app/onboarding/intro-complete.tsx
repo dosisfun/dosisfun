@@ -2,29 +2,26 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Image, StatusBar, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { useFonts, PixelifySans_400Regular } from '@expo-google-fonts/pixelify-sans';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useCharacter } from '@/contexts/CharacterContext';
+import { getImageUrl } from '@/services/NFT.service';
 
 const { width, height } = Dimensions.get('window');
 
 export default function IntroComplete() {
   const { characterId } = useLocalSearchParams();
+  const character = useCharacter();
   const [googleFontsLoaded] = useFonts({
     PixelifySans_400Regular,
   });
 
   // Get character image based on selected character
   const getCharacterImage = () => {
-    switch (characterId) {
-      case '1':
-        return require('../../assets/images/p1.png'); // Peter
-      case '4':
-        return require('../../assets/images/p4.png'); // Mariah
-      case '20':
-        return require('../../assets/images/p20.png'); // Will
-      default:
-        return require('../../assets/images/p1.png'); 
-    }
-  };
+    // Prefer image_large from metadata if available, otherwise use main image
+    const imageUrl = character.selectedCharacter.image;
 
+    // Convert IPFS URLs or return as-is
+    return { uri: getImageUrl(imageUrl) };
+  };
   const [currentScreen, setCurrentScreen] = useState('intro'); // 'intro', 'part2', 'zoom', 'final'
   
   const [showDialogue, setShowDialogue] = useState(false);

@@ -7,9 +7,11 @@ import { formatAddress } from '@/utils/utils';
 import { router } from 'expo-router';
 import { NFTData } from '../types/nft';
 import { getImageUrl, fetchUserNFTs } from '../services/NFT.service';
+import { useCharacter } from '../contexts/CharacterContext';
 
 export default function NFTValidation() {
   const { aegisAccount } = useAegis();
+  const { setSelectedCharacter } = useCharacter();
   const [addressCopied, setAddressCopied] = useState(false);
   const [isLoadingNFTs, setIsLoadingNFTs] = useState(true);
   const [nfts, setNfts] = useState<NFTData[]>([]);
@@ -85,6 +87,9 @@ export default function NFTValidation() {
 
   const handleContinueWithCharacter = () => {
     if (selectedNFT) {
+      // Save selected character to context
+      setSelectedCharacter(selectedNFT);
+
       // Navigate to intro screen with character data
       router.push({
         pathname: '/onboarding/intro-complete',
