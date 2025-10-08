@@ -1,4 +1,4 @@
-export interface VoyagerNFT {
+export interface DosisNFT {
   contract_address: string;
   token_id: string;
   name?: string;
@@ -13,12 +13,12 @@ export interface VoyagerNFT {
   };
 }
 
-export interface VoyagerNFTResponse {
-  ownedNfts: VoyagerNFT[];
+export interface DosisNFTResponse {
+  ownedNfts: DosisNFT[];
   totalCount: number;
 }
 
-export interface MintedNFTItem {
+export interface DosisNFTItem {
   contract_address: string;
   token_id: string;
   name: string | null;
@@ -32,8 +32,8 @@ export interface MintedNFTItem {
   minted_at_transaction_hash: string;
 }
 
-export interface VoyagerNFTItemsResponse {
-  items: MintedNFTItem[];
+export interface DosisNFTItemsResponse {
+  items: DosisNFTItem[];
   pagination: {
     prev: string | null;
     next: string | null;

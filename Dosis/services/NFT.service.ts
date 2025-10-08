@@ -1,40 +1,74 @@
-import { getDosisNFTsByAddress } from './VoyagerNFT.service';
-import { VoyagerNFT } from '../types/voyager';
+import { getDosisNFTsByAddress } from './DosisNFT.service';
+import { getCharacterStats } from './CharacterState.service';
+import { DosisNFT } from '../types/dosis';
 import { NFTData, NFTMetadata } from '../types/nft';
-
-const DOSIS_NFT_CONTRACT = '0x05bb9c4d7f7b422c281c65e8310da8a753562f274066ad3a6db48447cba2df91';
+import { DOSIS_NFT_ADDRESS, IPFS_GATEWAY } from '../constants/contracts';
 
 /**
- * Transform Voyager NFT data to our app format
+ * Transform Dosis NFT data to our app format
  */
-function transformVoyagerNFT(voyagerNFT: VoyagerNFT): NFTData {
+function transformDosisNFT(dosisNFT: DosisNFT): NFTData {
   return {
-    id: voyagerNFT.token_id,
-    name: voyagerNFT.name || `DOSIS NFT #${voyagerNFT.token_id}`,
-    image: voyagerNFT.image || '',
-    description: voyagerNFT.description || '',
-    tokenId: voyagerNFT.token_id,
-    contractAddress: voyagerNFT.contract_address,
-    owner: voyagerNFT.owner || '',
-    metadata: voyagerNFT.metadata
+    id: dosisNFT.token_id,
+    name: dosisNFT.name || `DOSIS NFT #${dosisNFT.token_id}`,
+    image: dosisNFT.image || '',
+    description: dosisNFT.description || '',
+    tokenId: dosisNFT.token_id,
+    contractAddress: dosisNFT.contract_address,
+    owner: dosisNFT.owner || '',
+    metadata: dosisNFT.metadata
   };
 }
 
 /**
- * Fetch NFTs owned by a specific address using Voyager API
+ * Enrich NFT data with character state from blockchain
+ * Fetches character stats for each NFT and attaches to the object
+ * Failures are logged but don't block the NFT from being returned
+ *
+ * @param nfts - Array of NFT data to enrich
  */
-export async function fetchUserNFTs(address: string): Promise<NFTData[]> {
+async function enrichWithCharacterState(nfts: NFTData[]): Promise<void> {
+  const enrichmentPromises = nfts.map(async (nft) => {
+    try {
+      const stats = await getCharacterStats(nft.tokenId);
+      nft.characterState = stats;
+    } catch (error) {
+      console.warn(`Failed to fetch character state for token ${nft.tokenId}:`, error);
+      // NFT remains without character state but is still usable
+    }
+  });
+
+  await Promise.allSettled(enrichmentPromises);
+}
+
+/**
+ * Fetch NFTs owned by a specific address
+ * Optionally enriches with character state data
+ *
+ * @param address - Wallet address
+ * @param includeCharacterState - Whether to fetch character stats (default: false)
+ * @returns Array of NFT data, optionally with character state
+ */
+export async function fetchUserNFTs(
+  address: string,
+  includeCharacterState: boolean = false
+): Promise<NFTData[]> {
   try {
     console.log('Fetching NFTs for address:', address);
-    
-    // Get NFTs from Voyager
-    const voyagerNFTs = await getDosisNFTsByAddress(address);
-    console.log('Voyager NFTs received:', voyagerNFTs.length);
-    
-    // Transform to our format
-    const nfts = voyagerNFTs.map(transformVoyagerNFT);
+
+    // Get NFTs from Voyager balance API
+    const dosisNFTs = await getDosisNFTsByAddress(address);
+    console.log('Dosis NFTs received:', dosisNFTs.length);
+
+    // Transform to app format
+    const nfts = dosisNFTs.map(transformDosisNFT);
     console.log('Transformed NFTs:', nfts.length);
-    
+
+    // Optionally enrich with character state
+    if (includeCharacterState) {
+      await enrichWithCharacterState(nfts);
+    }
+
     return nfts;
   } catch (error) {
     console.error('Error fetching user NFTs:', error);
@@ -50,7 +84,7 @@ export async function fetchNFTMetadata(metadataUrl: string): Promise<NFTMetadata
     // Handle IPFS URLs
     let url = metadataUrl;
     if (metadataUrl.startsWith('ipfs://')) {
-      url = metadataUrl.replace('ipfs://', 'https://ipfs.io/ipfs/');
+      url = metadataUrl.replace('ipfs://', IPFS_GATEWAY);
     }
     
     const response = await fetch(url);
@@ -71,7 +105,7 @@ export async function fetchNFTMetadata(metadataUrl: string): Promise<NFTMetadata
  */
 export function getImageUrl(imageUrl: string): string {
   if (imageUrl.startsWith('ipfs://')) {
-    return imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/');
+    return imageUrl.replace('ipfs://', IPFS_GATEWAY);
   }
   return imageUrl;
 }

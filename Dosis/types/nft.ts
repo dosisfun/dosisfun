@@ -2,6 +2,8 @@
  * NFT and Character related types for React Native app
  */
 
+import { CharacterStats as DosisCharacterStats } from './character-state';
+
 export interface NFTData {
   id: string;
   name: string;
@@ -16,6 +18,11 @@ export interface NFTData {
     collection_name?: string;
     last_transfer_time?: number;
   };
+  /**
+   * Optional character state data fetched from blockchain
+   * Only present when explicitly requested via fetchUserNFTs(address, true)
+   */
+  characterState?: DosisCharacterStats;
 }
 
 export interface CharacterStats {

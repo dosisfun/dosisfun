@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, Dimensions, StatusBar, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, Image, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import { useAegis } from '@cavos/aegis';
 import { getPrivateKey, storePrivateKey } from '../utils/secureStorage';
