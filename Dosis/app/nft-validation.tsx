@@ -1,24 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, Image, StatusBar, TouchableOpacity, Animated, ScrollView } from 'react-native';
 import { useFonts, PixelifySans_400Regular } from '@expo-google-fonts/pixelify-sans';
 import { useAegis } from '@cavos/aegis';
 import * as Clipboard from 'expo-clipboard';
 import { formatAddress } from '@/utils/utils';
 import { router } from 'expo-router';
-
-// Mock NFT data
-const mockNFTs = [
-  { id: 1, name: 'Peter', image: require('../assets/images/p1.png') },
-  { id: 4, name: 'Mariah', image: require('../assets/images/p4.png') },
-  { id: 20, name: 'Will', image: require('../assets/images/p20.png') },
-];
+import { NFTData } from '../types/nft';
+import { getImageUrl, fetchUserNFTs } from '../services/NFT.service';
 
 export default function NFTValidation() {
   const { aegisAccount } = useAegis();
   const [addressCopied, setAddressCopied] = useState(false);
   const [isLoadingNFTs, setIsLoadingNFTs] = useState(true);
-  const [nfts, setNfts] = useState([]);
-  const [selectedNFT, setSelectedNFT] = useState<any>(null);
+  const [nfts, setNfts] = useState<NFTData[]>([]);
+  const [selectedNFT, setSelectedNFT] = useState<NFTData | null>(null);
+  const [nftError, setNftError] = useState<string | null>(null);
   const floatAnim = useRef(new Animated.Value(0)).current;
 
   const [googleFontsLoaded] = useFonts({
@@ -48,21 +44,31 @@ export default function NFTValidation() {
 
     floatingAnimation();
 
-    // Simulate fetching NFTs
+    // Fetch NFTs when component mounts
     fetchNFTs();
   }, [floatAnim]);
 
-  const fetchNFTs = async () => {
-    try {
-      setIsLoadingNFTs(true);
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setNfts(mockNFTs as typeof nfts);
+  const fetchNFTs = () => {
+    if (!aegisAccount.address) {
       setIsLoadingNFTs(false);
-    } catch (error) {
-      console.error('Error fetching NFTs:', error);
-      setIsLoadingNFTs(false);
+      return;
     }
+
+    setIsLoadingNFTs(true);
+    setNftError(null);
+
+    fetchUserNFTs(aegisAccount.address)
+      .then((userNFTs) => {
+        setNfts(userNFTs);
+        setIsLoadingNFTs(false);
+        console.log('NFTs fetched successfully:', userNFTs.length);
+      })
+      .catch((error) => {
+        console.error('Error fetching NFTs:', error);
+        setNftError(error.message || 'Failed to fetch NFTs');
+        setNfts([]);
+        setIsLoadingNFTs(false);
+      });
   };
 
   const copyAddressToClipboard = async () => {
@@ -82,7 +88,7 @@ export default function NFTValidation() {
       // Navigate to intro screen with character data
       router.push({
         pathname: '/onboarding/intro-complete',
-        params: { characterId: selectedNFT.id.toString() }
+        params: { characterId: selectedNFT.tokenId }
       });
     }
   };
@@ -99,16 +105,23 @@ export default function NFTValidation() {
         <StatusBar hidden />
 
         {/* Cassette Image */}
-        <Animated.Image
-          source={require('../assets/images/cassette.png')}
+        <Animated.View
           style={{
             width: 200,
             height: 200,
             marginBottom: 40,
             transform: [{ translateY: floatAnim }],
           }}
-          resizeMode="contain"
-        />
+        >
+          <Image
+            source={require('../assets/images/cassette.png')}
+            style={{
+              width: 200,
+              height: 200,
+            }}
+            resizeMode="contain"
+          />
+        </Animated.View>
 
         {/* Loading Text */}
         <Text style={{
@@ -119,8 +132,45 @@ export default function NFTValidation() {
           marginBottom: 30,
           lineHeight: 24,
         }}>
-          CHECKING FOR CHARACTER NFTS...
+          {nftError ? 'ERROR LOADING NFTS...' : 'CHECKING FOR CHARACTER NFTS...'}
         </Text>
+
+        {/* Error message */}
+        {nftError && (
+          <Text style={{
+            fontSize: 14,
+            color: '#FF6B6B',
+            fontFamily: googleFontsLoaded ? 'PixelifySans_400Regular' : 'System',
+            textAlign: 'center',
+            marginBottom: 20,
+            paddingHorizontal: 20,
+          }}>
+            {nftError}
+          </Text>
+        )}
+
+        {/* Retry button */}
+        {nftError && (
+          <TouchableOpacity
+            onPress={fetchNFTs}
+            style={{
+              backgroundColor: '#D301F2',
+              paddingHorizontal: 20,
+              paddingVertical: 10,
+              borderRadius: 8,
+              marginTop: 10,
+            }}
+          >
+            <Text style={{
+              fontSize: 14,
+              color: '#FFFFFF',
+              fontFamily: googleFontsLoaded ? 'PixelifySans_400Regular' : 'System',
+              fontWeight: 'bold',
+            }}>
+              RETRY
+            </Text>
+          </TouchableOpacity>
+        )}
 
       </View>
     );
@@ -138,16 +188,23 @@ export default function NFTValidation() {
         <StatusBar hidden />
 
         {/* Cassette Image */}
-        <Animated.Image
-          source={require('../assets/images/cassette.png')}
+        <Animated.View
           style={{
             width: 200,
             height: 200,
             marginBottom: 40,
             transform: [{ translateY: floatAnim }],
           }}
-          resizeMode="contain"
-        />
+        >
+          <Image
+            source={require('../assets/images/cassette.png')}
+            style={{
+              width: 200,
+              height: 200,
+            }}
+            resizeMode="contain"
+          />
+        </Animated.View>
 
         {/* Main Text */}
         <Text style={{
@@ -250,29 +307,32 @@ export default function NFTValidation() {
           justifyContent: 'center',
           gap: 20,
         }}>
-          {nfts.map((nft: any) => (
+          {nfts.map((nft: NFTData) => (
             <TouchableOpacity
-              key={nft.id}
+              key={nft.tokenId}
               onPress={() => setSelectedNFT(nft)}
               style={{
                 width: 150,
                 height: 150,
                 borderRadius: 12,
                 overflow: 'hidden',
-                borderWidth: selectedNFT?.id === nft.id ? 3 : 2,
-                borderColor: selectedNFT?.id === nft.id ? '#D301F2' : 'rgba(255, 255, 255, 0.3)',
+                borderWidth: selectedNFT?.tokenId === nft.tokenId ? 3 : 2,
+                borderColor: selectedNFT?.tokenId === nft.tokenId ? '#D301F2' : 'rgba(255, 255, 255, 0.3)',
                 backgroundColor: 'rgba(255, 255, 255, 0.1)',
               }}
             >
               <Image
-                source={nft.image}
+                source={{ uri: getImageUrl(nft.image) }}
                 style={{
                   width: '100%',
                   height: '100%',
                 }}
                 resizeMode="cover"
+                onError={(error: any) => {
+                  console.error('Error loading NFT image:', error);
+                }}
               />
-              {selectedNFT?.id === nft.id && (
+              {selectedNFT?.tokenId === nft.tokenId && (
                 <View style={{
                   position: 'absolute',
                   top: 5,
