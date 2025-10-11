@@ -326,12 +326,12 @@ mod MyToken {
 
         #[external(v0)]
         fn get_character_ingredients(
-            self: @ContractState, token_id: u256, all_ingredients_count: u32,
+            self: @ContractState, token_id: u256
         ) -> Array<(u32, u32)> {
             let mut ingredients = array![];
 
             let mut ingredient_id: u32 = 1;
-            while ingredient_id <= all_ingredients_count {
+            while ingredient_id <= 5 { // amount of ingredients
                 let quantity = self.character_ingredients.entry((token_id, ingredient_id)).read();
                 if quantity > 0 {
                     ingredients.append((ingredient_id, quantity));

@@ -211,17 +211,25 @@ pub mod black_market_system {
     }
 
     // Helper function to calculate ingredient price based on ID
+    // Ingredient IDs:
+    // 1 = RUCUCU_OG
+    // 2 = OG Kush
+    // 3 = Pineapple Express
+    // 4 = Gelato
+    // 5 = Blue Dream
     fn calculate_ingredient_price(ingredient_id: u32) -> u256 {
-        // Prices based on ingredient rarity/type
-        // IDs 1-10: Basic ingredients (cheap)
-        // IDs 11-20: Intermediate ingredients (medium)
-        // IDs 21-30: Advanced ingredients (expensive)
-        if ingredient_id <= 10 {
-            10 // Basic: 10 cash each
-        } else if ingredient_id <= 20 {
-            25 // Intermediate: 25 cash each
+        if ingredient_id == 1 {
+            15 // RUCUCU_OG: 15 cash
+        } else if ingredient_id == 2 {
+            20 // OG Kush: 20 cash
+        } else if ingredient_id == 3 {
+            25 // Pineapple Express: 25 cash
+        } else if ingredient_id == 4 {
+            30 // Gelato: 30 cash
+        } else if ingredient_id == 5 {
+            35 // Blue Dream: 35 cash
         } else {
-            50 // Advanced: 50 cash each
+            10 // Default fallback price
         }
     }
 }
