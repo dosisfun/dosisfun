@@ -5,6 +5,7 @@ pub mod interfaces {
 pub mod models {
     pub mod market;
     pub mod nft;
+    pub mod crafting;
 }
 
 pub mod systems {
