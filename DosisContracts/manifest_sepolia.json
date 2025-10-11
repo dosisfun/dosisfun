@@ -1479,8 +1479,8 @@
   },
   "contracts": [
     {
-      "address": "0x4c61c998b9b524cc646d1cf508476e287d4f2f60395932f3368cf6278d3c75a",
-      "class_hash": "0x6575220b2d1d9fbe1093ad8e5bf4927f21db16108c8cf0e5a8d125bcced795f",
+      "address": "0x7bcadda2b818cea0fc4b14dd09ebb2e24bf96ad29b2e1c76b6751c8eca7fd9",
+      "class_hash": "0x6d17e9a2dca46acbab8f7258e9aa76581879d095555d2ecd9aef33aee479792",
       "abi": [
         {
           "type": "impl",
@@ -1840,8 +1840,8 @@
         }
       ],
       "init_calldata": [],
-      "tag": "dosis_game2-black_market_system",
-      "selector": "0x33d4526632116c3ea057269b8d00fe248bfd395ab875d3185e42fff5c26d157",
+      "tag": "dosis_game3-black_market_system",
+      "selector": "0x333e2234d9d3a6e3e499339f3211de915e0a818b7ea2bf8ef4bcdf056903354",
       "systems": [
         "list_drug",
         "cancel_listing",
@@ -1851,8 +1851,8 @@
       ]
     },
     {
-      "address": "0x3d469f506db8c193f26795b2688a453f683a39caefd2d868146391493126d7e",
-      "class_hash": "0x5a35d6b2e9b44fea8cc2c6d98cce257b81c8d6239331274638a51d9930d728b",
+      "address": "0x235840b14fd0ef0966f1499afaf4dda2eef502cf7714cc2f5421795d3ddaf59",
+      "class_hash": "0x225ef212867febb37130bc51fef938be2aeccd18a383b29e6207d798728e6b0",
       "abi": [
         {
           "type": "impl",
@@ -1924,12 +1924,60 @@
           ]
         },
         {
+          "type": "enum",
+          "name": "core::bool",
+          "variants": [
+            {
+              "name": "False",
+              "type": "()"
+            },
+            {
+              "name": "True",
+              "type": "()"
+            }
+          ]
+        },
+        {
+          "type": "struct",
+          "name": "dosis_game::models::crafting::CraftingSession",
+          "members": [
+            {
+              "name": "nft_token_id",
+              "type": "core::integer::u256"
+            },
+            {
+              "name": "drug_name",
+              "type": "core::byte_array::ByteArray"
+            },
+            {
+              "name": "total_steps_required",
+              "type": "core::integer::u32"
+            },
+            {
+              "name": "steps_completed",
+              "type": "core::integer::u32"
+            },
+            {
+              "name": "started_timestamp",
+              "type": "core::integer::u64"
+            },
+            {
+              "name": "last_progress_timestamp",
+              "type": "core::integer::u64"
+            },
+            {
+              "name": "is_active",
+              "type": "core::bool"
+            }
+          ]
+        },
+        {
           "type": "interface",
           "name": "dosis_game::systems::drug_crafting::IDrugCrafting",
           "items": [
             {
               "type": "function",
-              "name": "craft_drug",
+              "name": "start_crafting",
               "inputs": [
                 {
                   "name": "nft_token_id",
@@ -1950,6 +1998,46 @@
               ],
               "outputs": [],
               "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "progress_craft",
+              "inputs": [
+                {
+                  "name": "nft_token_id",
+                  "type": "core::integer::u256"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "cancel_crafting",
+              "inputs": [
+                {
+                  "name": "nft_token_id",
+                  "type": "core::integer::u256"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "get_crafting_session",
+              "inputs": [
+                {
+                  "name": "nft_token_id",
+                  "type": "core::integer::u256"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "dosis_game::models::crafting::CraftingSession"
+                }
+              ],
+              "state_mutability": "view"
             }
           ]
         },
@@ -2069,10 +2157,12 @@
         }
       ],
       "init_calldata": [],
-      "tag": "dosis_game2-drug_crafting_system",
-      "selector": "0x508d243d874a17ec30f084718c0083dc5d9fc9c3c0bf35388f7034fa3504878",
+      "tag": "dosis_game3-drug_crafting_system",
+      "selector": "0x4b3b405cd2908ea6a5037dcf38edc2b43536cf8872f7de26a9289646ed170e6",
       "systems": [
-        "craft_drug",
+        "start_crafting",
+        "progress_craft",
+        "cancel_crafting",
         "upgrade"
       ]
     }
@@ -2081,9 +2171,15 @@
   "models": [
     {
       "members": [],
+      "class_hash": "0x4fe0d5dac44fc5adb16aa5db612c34e62ca8b45321d9fa8d9e7582886920cef",
+      "tag": "dosis_game3-CraftingSession",
+      "selector": "0x2660cb58a740ae526759487296942afa6c78d766378f1fa8a6e8afbb7f03400"
+    },
+    {
+      "members": [],
       "class_hash": "0x357592a05ee57e76dc36fbe1a9eaab4e24d3409c6e9e0bc7a9f345f45141e94",
-      "tag": "dosis_game2-MarketListing",
-      "selector": "0x38df668b3e3d3f8e43330883dc5e23b2ab27f76a8770ba910bd7b68edb327a0"
+      "tag": "dosis_game3-MarketListing",
+      "selector": "0x582287f2bfa4d498e3e0b7b82b37c622125840c56181c84acb23ddd46b236a8"
     }
   ],
   "events": [],
