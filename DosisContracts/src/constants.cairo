@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 
 pub fn NAMESPACE() -> @ByteArray{
-    @"dosis_game3"
+    @"dosis_game4"
 }
 
 pub fn NFT_CONTRACTS() -> ContractAddress {

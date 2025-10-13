@@ -1479,8 +1479,8 @@
   },
   "contracts": [
     {
-      "address": "0x7bcadda2b818cea0fc4b14dd09ebb2e24bf96ad29b2e1c76b6751c8eca7fd9",
-      "class_hash": "0x6d17e9a2dca46acbab8f7258e9aa76581879d095555d2ecd9aef33aee479792",
+      "address": "0x7875a61423e40e42c5529119b83586803d701e84923eebfd098fb48bd562cdc",
+      "class_hash": "0x61c1ac07bb31fd5fab806d8c5beacee6e14139723b71b816e2fc60e72fddfec",
       "abi": [
         {
           "type": "impl",
@@ -1840,8 +1840,8 @@
         }
       ],
       "init_calldata": [],
-      "tag": "dosis_game3-black_market_system",
-      "selector": "0x333e2234d9d3a6e3e499339f3211de915e0a818b7ea2bf8ef4bcdf056903354",
+      "tag": "dosis_game4-black_market_system",
+      "selector": "0x5a48a554ce99adcb1be11dedda3f21bd47699f546a65910a1876a750895a27c",
       "systems": [
         "list_drug",
         "cancel_listing",
@@ -1851,8 +1851,8 @@
       ]
     },
     {
-      "address": "0x235840b14fd0ef0966f1499afaf4dda2eef502cf7714cc2f5421795d3ddaf59",
-      "class_hash": "0x225ef212867febb37130bc51fef938be2aeccd18a383b29e6207d798728e6b0",
+      "address": "0x2e9eab067e26cfd62e134193eac06d7e33c01f8cc124f9444ec2b5a50286c3e",
+      "class_hash": "0x3e868b8903300e11f81cfa6d3b1f57228e20cb539cffba3637b46c145ac3a0c",
       "abi": [
         {
           "type": "impl",
@@ -2157,8 +2157,8 @@
         }
       ],
       "init_calldata": [],
-      "tag": "dosis_game3-drug_crafting_system",
-      "selector": "0x4b3b405cd2908ea6a5037dcf38edc2b43536cf8872f7de26a9289646ed170e6",
+      "tag": "dosis_game4-drug_crafting_system",
+      "selector": "0x77c9d203d3731065ec81fc1646492f2bb9ebf98d5612560a074ae7e8cd97493",
       "systems": [
         "start_crafting",
         "progress_craft",
@@ -2172,14 +2172,14 @@
     {
       "members": [],
       "class_hash": "0x4fe0d5dac44fc5adb16aa5db612c34e62ca8b45321d9fa8d9e7582886920cef",
-      "tag": "dosis_game3-CraftingSession",
-      "selector": "0x2660cb58a740ae526759487296942afa6c78d766378f1fa8a6e8afbb7f03400"
+      "tag": "dosis_game4-CraftingSession",
+      "selector": "0x45e47c09d2aa4ae3bfeb3ead5f812f90930aa0213bc6c36048188d2916cdb61"
     },
     {
       "members": [],
       "class_hash": "0x357592a05ee57e76dc36fbe1a9eaab4e24d3409c6e9e0bc7a9f345f45141e94",
-      "tag": "dosis_game3-MarketListing",
-      "selector": "0x582287f2bfa4d498e3e0b7b82b37c622125840c56181c84acb23ddd46b236a8"
+      "tag": "dosis_game4-MarketListing",
+      "selector": "0x1b7e138d70eb4ad35ecf8d06c5b51a832998281cf75a7c897d5066568448816"
     }
   ],
   "events": [],
