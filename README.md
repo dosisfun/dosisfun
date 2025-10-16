@@ -6,7 +6,7 @@
   **An underground survival RPG game on Starknet where you craft, trade, and dominate the black market.**
 </div>
 
-Dosis.Fun is a blockchain-based game built on the Starknet ecosystem that combines NFT mechanics, crafting systems, and a player-driven economy. Players mint character NFTs, gather ingredients, craft drugs with varying rarities, and trade them on a decentralized black market.
+DOSIS.FUN is a blockchain-based game built on the Starknet ecosystem that combines NFT mechanics, crafting systems, and a player-driven economy. Players mint character NFTs, gather ingredients, craft drugs with varying rarities, and trade them on a decentralized black market.
 
 ---
 
