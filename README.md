@@ -1,7 +1,7 @@
 <div align="center">
   <img src="Dosis/assets/images/logo.png" alt="Dosis.Fun Logo" width="200"/>
 
-  # Dosis.Fun
+  # DOSIS.FUN
 
   **An underground survival RPG game on Starknet where you craft, trade, and dominate the black market.**
 </div>
