@@ -74,7 +74,7 @@ export default function DrugCraftingScreen() {
     }
 
     if (!baseIngredients.trim()) {
-      Alert.alert('Error', 'Please enter base ingredients');
+      Alert.alert('Error', 'Please enter base ingredients in format: "1,5 2,3 3,2"');
       return;
     }
 
@@ -84,16 +84,55 @@ export default function DrugCraftingScreen() {
     }
 
     // Parse base ingredients (format: "1,5 2,3 3,2" for ingredient_id,quantity pairs)
-    const baseIngredientsArray = baseIngredients.split(' ').map(pair => {
-      const [id, quantity] = pair.split(',');
-      return {
-        ingredient_id: parseInt(id.trim()),
-        quantity: parseInt(quantity.trim())
-      };
-    });
+    let baseIngredientsArray;
+    try {
+      baseIngredientsArray = baseIngredients.split(' ').map(pair => {
+        const [id, quantity] = pair.split(',');
+        
+        // Validate that both id and quantity exist and are not empty
+        if (!id || !quantity || id.trim() === '' || quantity.trim() === '') {
+          throw new Error(`Invalid ingredient format: "${pair}". Expected format: "id,quantity"`);
+        }
+        
+        return {
+          ingredient_id: parseInt(id.trim()),
+          quantity: parseInt(quantity.trim())
+        };
+      }).filter(item => !isNaN(item.ingredient_id) && !isNaN(item.quantity));
+    } catch (error) {
+      Alert.alert('Error', `Invalid base ingredients format: ${error.message}`);
+      return;
+    }
 
     // Parse drug ingredient IDs (format: "1,2,3,4")
-    const drugIngredientIdsArray = drugIngredientIds.split(',').map(id => parseInt(id.trim()));
+    let drugIngredientIdsArray;
+    try {
+      drugIngredientIdsArray = drugIngredientIds.split(',').map(id => {
+        const trimmedId = id.trim();
+        if (!trimmedId) {
+          throw new Error('Empty ingredient ID found');
+        }
+        const parsedId = parseInt(trimmedId);
+        if (isNaN(parsedId)) {
+          throw new Error(`Invalid ingredient ID: "${trimmedId}"`);
+        }
+        return parsedId;
+      });
+    } catch (error) {
+      Alert.alert('Error', `Invalid drug ingredient IDs format: ${error.message}`);
+      return;
+    }
+
+    // Validate that we have ingredients
+    if (baseIngredientsArray.length === 0) {
+      Alert.alert('Error', 'No valid base ingredients found. Please check the format.');
+      return;
+    }
+
+    if (drugIngredientIdsArray.length === 0) {
+      Alert.alert('Error', 'No valid drug ingredient IDs found. Please check the format.');
+      return;
+    }
 
     setStarting(true);
     try {

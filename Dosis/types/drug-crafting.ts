@@ -73,6 +73,8 @@ export interface CraftingState {
   transactions: CraftingTransaction[];
   loading: boolean;
   error: string | null;
+  playerDrugs: number[];
+  drugDetails: { [drugId: number]: DrugInfo };
 }
 
 export interface CraftingFilters {
@@ -94,4 +96,13 @@ export interface CraftingValidation {
   missing_ingredients: IngredientRequirement[];
   total_cost: string;
   estimated_success_rate: number;
+}
+
+export interface DrugInfo {
+  id: number;
+  name: string;
+  rarity: string;
+  purity: number;
+  effects: string;
+  created_timestamp: number;
 }

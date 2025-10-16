@@ -4,14 +4,17 @@ import { StatusBar } from "expo-status-bar";
 import { CharacterProvider } from "../contexts/CharacterContext";
 import { BlackMarketProvider } from "../contexts/BlackMarketContext";
 import { DrugCraftingProvider } from "../contexts/DrugCraftingContext";
+import { AEGIS_CONFIG, NETWORK_CONFIG } from "../constants/contracts";
 
 export default function RootLayout() {
   return (
     <AegisProvider
       config={{
-        network: (process.env.EXPO_PUBLIC_STARKNET_NETWORK as any) || '',
-        appName: process.env.EXPO_PUBLIC_AEGIS_APP_NAME || '',
-        appId: process.env.EXPO_PUBLIC_AEGIS_APP_ID || '',
+        network: NETWORK_CONFIG.name,
+        appName: AEGIS_CONFIG.appName,
+        appId: AEGIS_CONFIG.appId,
+        // Temporarily disable paymaster to avoid AVNU errors
+        // paymasterApiKey: AEGIS_CONFIG.paymasterApiKey,
       }}
     >
       <CharacterProvider>

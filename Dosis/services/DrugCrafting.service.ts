@@ -8,15 +8,13 @@ import {
   StartCraftingData,
   CraftingProgress
 } from '../types/drug-crafting';
-
-// Drug Crafting System contract address from environment variables
-const DRUG_CRAFTING_CONTRACT_ADDRESS = process.env.EXPO_PUBLIC_DRUG_CRAFTING_CONTRACT;
+import { CONTRACT_ADDRESSES, isValidContractAddress } from '../constants/contracts';
 
 export class DrugCraftingService {
   private contractAddress: string;
 
   constructor(contractAddress?: string) {
-    this.contractAddress = contractAddress || DRUG_CRAFTING_CONTRACT_ADDRESS;
+    this.contractAddress = contractAddress || CONTRACT_ADDRESSES.DRUG_CRAFTING;
   }
 
   /**
@@ -25,6 +23,11 @@ export class DrugCraftingService {
   async startCrafting(data: StartCraftingData, aegisAccount: any): Promise<{ txHash: string }> {
     if (!aegisAccount) {
       throw new Error('Aegis account not provided');
+    }
+
+    // Check if contract address is valid
+    if (!isValidContractAddress(this.contractAddress)) {
+      throw new Error('Drug Crafting contract not deployed yet. Please deploy the contract first.');
     }
 
     try {
@@ -82,6 +85,11 @@ export class DrugCraftingService {
       throw new Error('Aegis account not provided');
     }
 
+    // Check if contract address is valid
+    if (!isValidContractAddress(this.contractAddress)) {
+      throw new Error('Drug Crafting contract not deployed yet. Please deploy the contract first.');
+    }
+
     try {
       console.log('Progressing craft with Aegis:', nftTokenId);
       
@@ -134,6 +142,11 @@ export class DrugCraftingService {
       throw new Error('Aegis account not provided');
     }
 
+    // Check if contract address is valid
+    if (!isValidContractAddress(this.contractAddress)) {
+      throw new Error('Drug Crafting contract not deployed yet. Please deploy the contract first.');
+    }
+
     try {
       console.log('Canceling crafting with Aegis:', nftTokenId);
       
@@ -170,6 +183,12 @@ export class DrugCraftingService {
   async getCraftingSession(nftTokenId: string, aegisAccount?: any): Promise<CraftingSession | null> {
     if (!aegisAccount) {
       throw new Error('Aegis account not provided');
+    }
+
+    // Check if contract address is valid
+    if (!isValidContractAddress(this.contractAddress)) {
+      console.warn('Drug Crafting contract not deployed yet, returning null session');
+      return null;
     }
 
     try {
@@ -221,6 +240,7 @@ export class DrugCraftingService {
     } catch (error) {
       console.error('Error getting crafting session with Aegis:', error);
       // If there is no active session, the contract may throw an error
+      console.warn('Returning null session due to contract error');
       return null;
     }
   }
@@ -252,6 +272,92 @@ export class DrugCraftingService {
       estimated_time_remaining: Math.round(estimated_time_remaining),
       next_step_available
     };
+  }
+
+  /**
+   * Get player's crafted drugs
+   */
+  async getPlayerDrugs(nftTokenId: string, aegisAccount: any): Promise<number[]> {
+    if (!aegisAccount) {
+      throw new Error('Aegis account not provided');
+    }
+
+    // Check if contract address is valid
+    if (!isValidContractAddress(this.contractAddress)) {
+      console.warn('Drug Crafting contract not deployed yet, returning empty drug list');
+      return [];
+    }
+
+    try {
+      console.log('Getting player drugs with Aegis:', nftTokenId);
+      
+      // Convert u256 to low and high
+      const tokenId = BigInt(nftTokenId);
+      const tokenIdLow = (tokenId & BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')).toString();
+      const tokenIdHigh = (tokenId >> BigInt(128)).toString();
+      
+      const result = await aegisAccount.call(
+        this.contractAddress,
+        'get_player_drugs',
+        [tokenIdLow, tokenIdHigh]
+      );
+
+      console.log('Get player drugs result:', result);
+      
+      if (result && Array.isArray(result)) {
+        return result.map(id => Number(id));
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error getting player drugs with Aegis:', error);
+      console.warn('Returning empty drug list due to contract error');
+      return [];
+    }
+  }
+
+  /**
+   * Get drug information by ID
+   */
+  async getDrug(drugId: number, aegisAccount: any): Promise<any> {
+    if (!aegisAccount) {
+      throw new Error('Aegis account not provided');
+    }
+
+    // Check if contract address is valid
+    if (!isValidContractAddress(this.contractAddress)) {
+      console.warn('Drug Crafting contract not deployed yet, returning null drug info');
+      return null;
+    }
+
+    try {
+      console.log('Getting drug with Aegis:', drugId);
+      
+      const result = await aegisAccount.call(
+        this.contractAddress,
+        'get_drug',
+        [drugId.toString()]
+      );
+
+      console.log('Get drug result:', result);
+      
+      if (result && Array.isArray(result) && result.length >= 6) {
+        return {
+          id: Number(result[0]),
+          name: result[1],
+          rarity: result[2],
+          purity: Number(result[3]),
+          effects: result[4],
+          created_timestamp: Number(result[5])
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting drug with Aegis:', error);
+      console.warn('Returning null drug info due to contract error');
+      return null;
+    }
   }
 
   /**

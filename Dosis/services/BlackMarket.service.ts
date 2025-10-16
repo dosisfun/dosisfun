@@ -10,14 +10,13 @@ import {
   BuyDrugData,
   BlackMarketFilters
 } from '../types/black-market';
-
-const BLACK_MARKET_CONTRACT_ADDRESS = process.env.EXPO_PUBLIC_BLACK_MARKET_CONTRACT;
+import { CONTRACT_ADDRESSES, isValidContractAddress } from '../constants/contracts';
 
 export class BlackMarketService {
   private contractAddress: string;
 
   constructor(contractAddress?: string) {
-    this.contractAddress = contractAddress || BLACK_MARKET_CONTRACT_ADDRESS;
+    this.contractAddress = contractAddress || CONTRACT_ADDRESSES.BLACK_MARKET;
   }
 
   /**
@@ -26,6 +25,11 @@ export class BlackMarketService {
   async listDrug(data: ListingFormData, aegisAccount: any): Promise<{ listingId: number; txHash: string }> {
     if (!aegisAccount) {
       throw new Error('Aegis account not provided');
+    }
+
+    // Check if contract address is valid
+    if (!isValidContractAddress(this.contractAddress)) {
+      throw new Error('Black Market contract not deployed yet. Please deploy the contract first.');
     }
 
     try {
@@ -40,7 +44,8 @@ export class BlackMarketService {
       const params = [
         nftTokenIdLow,      // nft_token_id: u256 (low)
         nftTokenIdHigh,     // nft_token_id: u256 (high)
-        data.drug_id        // drug_id: u32
+        data.drug_id,       // drug_id: u32
+        data.price          // price: u256
       ];
 
       // Call the contract
@@ -71,6 +76,11 @@ export class BlackMarketService {
   async cancelListing(nftTokenId: string, listingId: number, aegisAccount: any): Promise<{ txHash: string }> {
     if (!aegisAccount) {
       throw new Error('Aegis account not provided');
+    }
+
+    // Check if contract address is valid
+    if (!isValidContractAddress(this.contractAddress)) {
+      throw new Error('Black Market contract not deployed yet. Please deploy the contract first.');
     }
 
     try {
@@ -104,6 +114,11 @@ export class BlackMarketService {
   async buyDrug(data: BuyDrugData, aegisAccount: any): Promise<{ txHash: string }> {
     if (!aegisAccount) {
       throw new Error('Aegis account not provided');
+    }
+
+    // Check if contract address is valid
+    if (!isValidContractAddress(this.contractAddress)) {
+      throw new Error('Black Market contract not deployed yet. Please deploy the contract first.');
     }
 
     try {
@@ -143,6 +158,11 @@ export class BlackMarketService {
   async buyIngredient(data: BuyIngredientData, aegisAccount: any): Promise<{ txHash: string }> {
     if (!aegisAccount) {
       throw new Error('Aegis account not provided');
+    }
+
+    // Check if contract address is valid
+    if (!isValidContractAddress(this.contractAddress)) {
+      throw new Error('Black Market contract not deployed yet. Please deploy the contract first.');
     }
 
     try {
@@ -220,6 +240,12 @@ export class BlackMarketService {
       throw new Error('Aegis account not provided');
     }
 
+    // Check if contract address is valid
+    if (!isValidContractAddress(this.contractAddress)) {
+      console.warn('Black Market contract not deployed yet, returning empty listings');
+      return [];
+    }
+
     try {
       console.log('Getting active listings with Aegis');
       
@@ -254,7 +280,9 @@ export class BlackMarketService {
       return listings;
     } catch (error) {
       console.error('Error getting active listings with Aegis:', error);
-      throw new Error(`Failed to get active listings: ${error}`);
+      // Return empty array instead of throwing error for now
+      console.warn('Returning empty listings due to contract error');
+      return [];
     }
   }
 
@@ -264,6 +292,12 @@ export class BlackMarketService {
   async getSellerListings(nftTokenId: string, aegisAccount?: any): Promise<MarketListing[]> {
     if (!aegisAccount) {
       throw new Error('Aegis account not provided');
+    }
+
+    // Check if contract address is valid
+    if (!isValidContractAddress(this.contractAddress)) {
+      console.warn('Black Market contract not deployed yet, returning empty seller listings');
+      return [];
     }
 
     try {
@@ -300,7 +334,9 @@ export class BlackMarketService {
       return listings;
     } catch (error) {
       console.error('Error getting seller listings with Aegis:', error);
-      throw new Error(`Failed to get seller listings: ${error}`);
+      // Return empty array instead of throwing error for now
+      console.warn('Returning empty seller listings due to contract error');
+      return [];
     }
   }
 

@@ -10,7 +10,8 @@ import {
   StartCraftingData,
   CraftingProgress,
   CraftingTransaction,
-  CraftingAction
+  CraftingAction,
+  DrugInfo
 } from '../types/drug-crafting';
 import { drugCraftingService } from '../services/DrugCrafting.service';
 import { useAegis } from '@cavos/aegis';
@@ -20,7 +21,9 @@ const initialState: CraftingState = {
   activeSession: null,
   transactions: [],
   loading: false,
-  error: null
+  error: null,
+  playerDrugs: [],
+  drugDetails: {}
 };
 
 // Action types
@@ -30,6 +33,8 @@ type CraftingActionType =
   | { type: 'SET_ACTIVE_SESSION'; payload: CraftingSession | null }
   | { type: 'ADD_TRANSACTION'; payload: CraftingTransaction }
   | { type: 'UPDATE_TRANSACTION'; payload: { hash: string; status: 'confirmed' | 'failed' } }
+  | { type: 'SET_PLAYER_DRUGS'; payload: number[] }
+  | { type: 'SET_DRUG_DETAILS'; payload: { drugId: number; details: DrugInfo } }
   | { type: 'CLEAR_ERROR' };
 
 // Reducer function
@@ -60,6 +65,18 @@ function craftingReducer(state: CraftingState, action: CraftingActionType): Craf
         )
       };
     
+    case 'SET_PLAYER_DRUGS':
+      return { ...state, playerDrugs: action.payload };
+    
+    case 'SET_DRUG_DETAILS':
+      return {
+        ...state,
+        drugDetails: {
+          ...state.drugDetails,
+          [action.payload.drugId]: action.payload.details
+        }
+      };
+    
     case 'CLEAR_ERROR':
       return { ...state, error: null };
     
@@ -79,6 +96,8 @@ interface DrugCraftingContextType {
   
   // Query actions
   fetchActiveSession: (nftTokenId: string) => Promise<void>;
+  fetchPlayerDrugs: (nftTokenId: string) => Promise<void>;
+  fetchDrugDetails: (drugId: number) => Promise<void>;
   
   // Utilities
   getCraftingProgress: () => CraftingProgress | null;
@@ -102,7 +121,19 @@ export function DrugCraftingProvider({ children }: DrugCraftingProviderProps) {
   // Helper function to handle errors
   const handleError = (error: any, action: string) => {
     console.error(`Error in ${action}:`, error);
-    dispatch({ type: 'SET_ERROR', payload: error.message || `Failed to ${action}` });
+    
+    let errorMessage = error.message || `Failed to ${action}`;
+    
+    // Handle specific error types
+    if (errorMessage.includes('paymaster execution failed')) {
+      errorMessage = 'Transaction failed due to paymaster error. Please ensure you have sufficient STRK tokens for gas fees.';
+    } else if (errorMessage.includes('Transaction failed after')) {
+      errorMessage = 'Transaction failed after multiple attempts. Please check your wallet balance and try again.';
+    } else if (errorMessage.includes('AVNU')) {
+      errorMessage = 'Payment service error. Please try again or ensure you have sufficient funds.';
+    }
+    
+    dispatch({ type: 'SET_ERROR', payload: errorMessage });
   };
 
   // Helper function to add transaction
@@ -183,6 +214,32 @@ export function DrugCraftingProvider({ children }: DrugCraftingProviderProps) {
     }
   };
 
+  // Get player's drugs
+  const fetchPlayerDrugs = async (nftTokenId: string): Promise<void> => {
+    try {
+      dispatch({ type: 'CLEAR_ERROR' });
+
+      const drugIds = await drugCraftingService.getPlayerDrugs(nftTokenId, aegisAccount);
+      dispatch({ type: 'SET_PLAYER_DRUGS', payload: drugIds });
+    } catch (error) {
+      handleError(error, 'fetch player drugs');
+    }
+  };
+
+  // Get drug details
+  const fetchDrugDetails = async (drugId: number): Promise<void> => {
+    try {
+      dispatch({ type: 'CLEAR_ERROR' });
+
+      const drugDetails = await drugCraftingService.getDrug(drugId, aegisAccount);
+      if (drugDetails) {
+        dispatch({ type: 'SET_DRUG_DETAILS', payload: { drugId, details: drugDetails } });
+      }
+    } catch (error) {
+      handleError(error, 'fetch drug details');
+    }
+  };
+
 
   // Get crafting progress
   const getCraftingProgress = (): CraftingProgress | null => {
@@ -207,6 +264,8 @@ export function DrugCraftingProvider({ children }: DrugCraftingProviderProps) {
     progressCraft,
     cancelCrafting,
     fetchActiveSession,
+    fetchPlayerDrugs,
+    fetchDrugDetails,
     getCraftingProgress,
     clearError,
     formatTime

@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { useFonts, PixelifySans_400Regular } from '@expo-google-fonts/pixelify-sans';
 import { router } from 'expo-router';
 import { useCharacter } from '@/contexts/CharacterContext';
+import ContractStatus from '@/components/ContractStatus';
+import GasFeeInfo from '@/components/GasFeeInfo';
 
 export default function GameMenuScreen() {
   const { selectedCharacter } = useCharacter();
@@ -77,6 +79,9 @@ export default function GameMenuScreen() {
           </Text>
         </View>
       )}
+
+      <ContractStatus />
+      <GasFeeInfo />
 
       <View style={styles.menuContainer}>
         {menuItems.map((item, index) => (

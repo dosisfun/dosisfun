@@ -112,7 +112,19 @@ export function BlackMarketProvider({ children }: BlackMarketProviderProps) {
   // Helper function to handle errors
   const handleError = (error: any, action: string) => {
     console.error(`Error in ${action}:`, error);
-    dispatch({ type: 'SET_ERROR', payload: error.message || `Failed to ${action}` });
+    
+    let errorMessage = error.message || `Failed to ${action}`;
+    
+    // Handle specific error types
+    if (errorMessage.includes('paymaster execution failed')) {
+      errorMessage = 'Transaction failed due to paymaster error. Please ensure you have sufficient STRK tokens for gas fees.';
+    } else if (errorMessage.includes('Transaction failed after')) {
+      errorMessage = 'Transaction failed after multiple attempts. Please check your wallet balance and try again.';
+    } else if (errorMessage.includes('AVNU')) {
+      errorMessage = 'Payment service error. Please try again or ensure you have sufficient funds.';
+    }
+    
+    dispatch({ type: 'SET_ERROR', payload: errorMessage });
   };
 
   // Helper function to add transaction

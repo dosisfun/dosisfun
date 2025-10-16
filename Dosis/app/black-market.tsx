@@ -4,11 +4,13 @@ import { useFonts, PixelifySans_400Regular } from '@expo-google-fonts/pixelify-s
 import { router } from 'expo-router';
 import { useBlackMarket } from '@/contexts/BlackMarketContext';
 import { useCharacter } from '@/contexts/CharacterContext';
+import { useDrugCrafting } from '@/contexts/DrugCraftingContext';
 import { MarketListing } from '@/types/black-market';
 
 export default function BlackMarketScreen() {
-  const { state, fetchListings, buyDrug, formatPrice, clearError } = useBlackMarket();
+  const { state, fetchListings, fetchMyListings, buyDrug, formatPrice, clearError } = useBlackMarket();
   const { selectedCharacter } = useCharacter();
+  const { fetchDrugDetails } = useDrugCrafting();
   const [googleFontsLoaded] = useFonts({
     PixelifySans_400Regular,
   });
@@ -16,10 +18,14 @@ export default function BlackMarketScreen() {
   const [selectedListing, setSelectedListing] = useState<MarketListing | null>(null);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [buying, setBuying] = useState(false);
+  const [activeTab, setActiveTab] = useState<'market' | 'my-listings'>('market');
 
   useEffect(() => {
     fetchListings();
-  }, []);
+    if (selectedCharacter) {
+      fetchMyListings(selectedCharacter.tokenId);
+    }
+  }, [selectedCharacter]);
 
   const handleBuyDrug = async (listing: MarketListing) => {
     if (!selectedCharacter) {
@@ -138,15 +144,45 @@ export default function BlackMarketScreen() {
         </TouchableOpacity>
         <Text style={styles.title}>Black Market</Text>
         <Text style={styles.subtitle}>Buy and sell drugs</Text>
+        
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'market' && styles.activeTab]}
+            onPress={() => setActiveTab('market')}
+          >
+            <Text style={[styles.tabText, activeTab === 'market' && styles.activeTabText]}>
+              Market
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'my-listings' && styles.activeTab]}
+            onPress={() => setActiveTab('my-listings')}
+          >
+            <Text style={[styles.tabText, activeTab === 'my-listings' && styles.activeTabText]}>
+              My Listings
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.listingsContainer}>
-        {state.listings.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No listings available</Text>
-          </View>
+        {activeTab === 'market' ? (
+          state.listings.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No listings available</Text>
+            </View>
+          ) : (
+            state.listings.map(renderListingCard)
+          )
         ) : (
-          state.listings.map(renderListingCard)
+          state.myListings.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No listings found</Text>
+              <Text style={styles.emptySubtext}>List some drugs to see them here!</Text>
+            </View>
+          ) : (
+            state.myListings.map(renderListingCard)
+          )
         )}
       </ScrollView>
 
@@ -201,6 +237,32 @@ const styles = StyleSheet.create({
     fontFamily: 'PixelifySans_400Regular',
     textAlign: 'center',
     marginTop: 5,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginTop: 15,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  activeTab: {
+    backgroundColor: '#00AA00',
+  },
+  tabText: {
+    fontSize: 16,
+    color: '#CCCCCC',
+    fontFamily: 'PixelifySans_400Regular',
+    fontWeight: 'bold',
+  },
+  activeTabText: {
+    color: '#FFFFFF',
   },
   listingsContainer: {
     flex: 1,
@@ -267,6 +329,13 @@ const styles = StyleSheet.create({
     color: '#888888',
     fontFamily: 'PixelifySans_400Regular',
     textAlign: 'center',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#666666',
+    fontFamily: 'PixelifySans_400Regular',
+    textAlign: 'center',
+    marginTop: 5,
   },
   modalOverlay: {
     position: 'absolute',
