@@ -1,243 +1,350 @@
-use dosis_game::models::nft::{PlayerNFT, PlayerNFTAssert, ZeroablePlayerNFTTrait};
-use dosis_game::models::drug::{Drug, DrugAssert};
-use dosis_game::types::drug_type::{DrugRarity, DrugState, DrugStateHelper, DrugRarityHelper};
-use dosis_game::types::recipe::CraftingResult;
-use dosis_game::models::recipe::{Recipe, RecipeAssert};
-use dosis_game::helpers::experience_utils::ExperienceCalculator;
-use dosis_game::store::StoreTrait;
+use dosis_game::models::crafting::CraftingSession;
 
 #[starknet::interface]
 pub trait IDrugCrafting<T> {
-    fn craft_drug(ref self: T, recipe_id: u32, ingredients: Array<felt252>) -> u32;
-    fn get_player_character(ref self: T) -> PlayerNFT;
-    fn get_player_stats(ref self: T) -> (u8, u16, u32, u32, u32, u16);
-    fn get_drug(ref self: T, drug_id: u32) -> Drug;
-    fn get_player_drugs(ref self: T) -> Array<u32>;
+    fn start_crafting(
+        ref self: T,
+        nft_token_id: u256,
+        name: ByteArray,
+        base_ingredients: Array<(u32, u32)>,
+        drug_ingredient_ids: Array<u32>,
+    );
+    fn progress_craft(ref self: T, nft_token_id: u256);
+    fn cancel_crafting(ref self: T, nft_token_id: u256);
+    fn get_crafting_session(self: @T, nft_token_id: u256) -> CraftingSession;
 }
 
 #[dojo::contract]
 pub mod drug_crafting_system {
-    use super::{
-        PlayerNFT, PlayerNFTAssert, ZeroablePlayerNFTTrait, Drug, DrugAssert, 
-        DrugRarity, DrugState, DrugStateHelper, DrugRarityHelper, Recipe, CraftingResult,
-        ExperienceCalculator, StoreTrait, IDrugCrafting
-    };
-    use starknet::{get_caller_address, get_block_timestamp};
-        use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use starknet::{get_block_timestamp, get_caller_address};
+    use dojo::model::ModelStorage;
+    use crate::interfaces::dosis_nft::{IDosisNFTDispatcher, IDosisNFTDispatcherTrait};
+    use crate::models::nft::DrugRarity;
+    use crate::models::crafting::{CraftingSession, AssertTrait};
+    use crate::constants::{NFT_CONTRACTS, NAMESPACE};
 
-    #[storage]
-    struct Storage {
-        drug_counter: u256,
-        recipe_counter: u256,
+    mod Errors {
+        pub const NOT_OWNER: felt252 = 'Not owner';
+        pub const CHARACTER_NOT_ACTIVE: felt252 = 'Character not active';
+        pub const INSUFFICIENT_BASE_INGREDIENT: felt252 = 'Insufficient base ingredient';
+        pub const NOT_DRUG_OWNER: felt252 = 'Not drug owner';
+        pub const DRUG_INGREDIENT_LOCKED: felt252 = 'Drug ingredient is locked';
+        pub const ALREADY_CRAFTING: felt252 = 'Already crafting';
+        pub const NO_ACTIVE_CRAFTING: felt252 = 'No active crafting session';
+        pub const CRAFTING_COMPLETED: felt252 = 'Crafting already completed';
     }
 
-    // Constructor
-    fn dojo_init(ref self: ContractState) {
-        self.drug_counter.write(1);
-        self.recipe_counter.write(1);
+    #[derive(Drop, Serde, Copy)]
+    pub enum CraftingResult {
+        CriticalFailure,
+        Failure,
+        Success,
+        CriticalSuccess,
     }
 
     #[abi(embed_v0)]
-    impl DrugCraftingImpl of IDrugCrafting<ContractState> {
-        fn get_player_character(ref self: ContractState) -> PlayerNFT {
-            let mut world = self.world(@"dosis_game");
-            let mut store = StoreTrait::new(world);
-            let caller = get_caller_address();
-            
-            store.get_player_character_by_owner(caller)
+    impl DrugCraftingImpl of super::IDrugCrafting<ContractState> {
+        fn start_crafting(
+            ref self: ContractState,
+            nft_token_id: u256,
+            name: ByteArray,
+            base_ingredients: Array<(u32, u32)>,
+            drug_ingredient_ids: Array<u32>,
+        ) {
+            let mut world = self.world(NAMESPACE());
+
+            // Check if already crafting
+            let existing_session: CraftingSession = world.read_model(nft_token_id);
+            assert(!existing_session.is_active, Errors::ALREADY_CRAFTING);
+            // Get NFT contract
+            let nft_contract = IDosisNFTDispatcher {
+                contract_address: NFT_CONTRACTS()
+            };
+
+            // Get character stats
+            let character_stats = nft_contract.get_character_stats(nft_token_id);
+            assert(character_stats.owner == get_caller_address(), Errors::NOT_OWNER);
+            assert(character_stats.is_active, Errors::CHARACTER_NOT_ACTIVE);
+
+            // Validate base ingredients
+            let mut i: u32 = 0;
+            while i < base_ingredients.len() {
+                let (ingredient_id, required_quantity) = *base_ingredients.at(i);
+                let available_quantity = nft_contract.get_character_ingredient(nft_token_id, ingredient_id);
+                assert(available_quantity >= required_quantity, Errors::INSUFFICIENT_BASE_INGREDIENT);
+                i += 1;
+            }
+
+            // Validate drug ingredients (not locked)
+            let mut j: u32 = 0;
+            while j < drug_ingredient_ids.len() {
+                let drug_id = *drug_ingredient_ids.at(j);
+                let drug = nft_contract.get_drug(drug_id);
+                assert(drug.owner_token_id == nft_token_id, Errors::NOT_DRUG_OWNER);
+                assert(!drug.is_locked, Errors::DRUG_INGREDIENT_LOCKED);
+                j += 1;
+            }
+
+            // Calculate crafting success (placeholder)
+            // TODO: Implement actual crafting logic with success rate
+            let _success_rate = calculate_success_rate(character_stats.level, 10);
+            // let _crafting_result = simulate_crafting(_success_rate);
+
+            // Consume ingredients
+            let mut k: u32 = 0;
+            while k < base_ingredients.len() {
+                let (ingredient_id, quantity) = *base_ingredients.at(k);
+                nft_contract.consume_ingredient(nft_token_id, ingredient_id, quantity);
+                k += 1;
+            }
+
+            // Consume drug ingredients
+            let mut l: u32 = 0;
+            while l < drug_ingredient_ids.len() {
+                let drug_id = *drug_ingredient_ids.at(l);
+                nft_contract.consume_drug(drug_id);
+                l += 1;
+            }
+
+            // Calculate total steps required for this craft
+            let total_steps = calculate_total_steps(
+                @base_ingredients,
+                @drug_ingredient_ids,
+                character_stats.level
+            );
+
+            // Create crafting session
+            let current_time = get_block_timestamp();
+            let session = CraftingSession {
+                nft_token_id,
+                drug_name: name,
+                total_steps_required: total_steps,
+                steps_completed: 0,
+                started_timestamp: current_time,
+                last_progress_timestamp: current_time,
+                is_active: true,
+            };
+
+            world.write_model(@session);
         }
 
-        fn craft_drug(ref self: ContractState, recipe_id: u32, ingredients: Array<felt252>) -> u32 {
-            let mut world = self.world(@"dosis_game");
-            let mut store = StoreTrait::new(world);
-            let caller = get_caller_address();
+        fn progress_craft(ref self: ContractState, nft_token_id: u256) {
+            let mut world = self.world(NAMESPACE());
 
-            let mut player_nft = store.get_player_character_by_owner(caller);
-            PlayerNFTAssert::assert_exists(player_nft);
+            // Get crafting session
+            let mut session: CraftingSession = world.read_model(nft_token_id);
+            session.assert_active();
+            session.assert_not_completed();
 
-            // Get recipe from storage
-            let recipe = store.read_recipe(recipe_id);
-            assert(recipe.id > 0, 'Recipe does not exist');
-            
-            // Validate recipe difficulty
-            assert(recipe.difficulty >= dosis_game::constants::MIN_RECIPE_DIFFICULTY, 'Recipe difficulty too low');
-            assert(recipe.difficulty <= dosis_game::constants::MAX_RECIPE_DIFFICULTY, 'Recipe difficulty too high');
-            
-            // Calculate crafting success based on player level and recipe difficulty
-            let success_rate = calculate_success_rate(player_nft.level, recipe.difficulty);
-            let crafting_result = simulate_crafting(success_rate);
+            // Get NFT contract
+            let nft_contract = IDosisNFTDispatcher { contract_address: NFT_CONTRACTS() };
 
-            let drug_id = self.drug_counter.read();
-            self.drug_counter.write(drug_id + 1);
+            // Verify ownership
+            let character_stats = nft_contract.get_character_stats(nft_token_id);
+            assert(character_stats.owner == get_caller_address(), Errors::NOT_OWNER);
 
-            match crafting_result {
-                CraftingResult::Success | CraftingResult::CriticalSuccess => {
-                    // Create successful drug
-                    let mut drug = Drug {
-                        id: drug_id.try_into().unwrap(),
-                        owner: get_caller_address(),
-                        name: recipe.name,
-                        drug_type: recipe.drug_type,
-                        rarity: recipe.rarity,
-                        state: DrugStateHelper::to_felt252(DrugState::Refined),
-                        purity: calculate_purity(crafting_result, recipe.difficulty),
-                        quantity: 1,
-                        creation_timestamp: get_block_timestamp(),
-                        recipe_id,
-                    };
+            // Increment progress
+            session.steps_completed += 1;
+            session.last_progress_timestamp = get_block_timestamp();
 
-                    // Award experience
-                    let exp_gained = calculate_experience_gain(recipe, crafting_result, player_nft.level);
-                    player_nft.experience += exp_gained;
-                    player_nft.total_drugs_created += 1;
-                    player_nft.successful_crafts += 1;
-                    player_nft.last_active_timestamp = get_block_timestamp();
-
-                    // Check for level up
-                    if ExperienceCalculator::should_level_up(player_nft.level, player_nft.experience) {
-                        player_nft.level += 1;
-                        player_nft.experience = ExperienceCalculator::remaining_exp_after_level_up(
-                            player_nft.level - 1, player_nft.experience
-                        );
-                        // Award reputation for leveling up
-                        player_nft.reputation += dosis_game::constants::LEVEL_UP_REPUTATION_BONUS.into();
-                    }
-
-                    // Award reputation based on drug quality
-                    let rarity_enum = DrugRarityHelper::from_felt252(drug.rarity);
-                    player_nft.reputation += calculate_reputation_gain(rarity_enum, drug.purity).into();
-
-                    store.write_drug(drug);
-                    store.write_player_nft(player_nft);
-
-            // Update inventory
-            store.add_drug_to_inventory(drug_id.try_into().unwrap());
-
-                    drug_id.try_into().unwrap()
-                },
-                CraftingResult::Failure | CraftingResult::CriticalFailure => {
-                    // Failed crafting
-                    player_nft.failed_crafts += 1;
-                    player_nft.last_active_timestamp = get_block_timestamp();
-                    
-                    // Small experience gain even for failures
-                    player_nft.experience += 1;
-                    
-                    store.write_player_nft(player_nft);
-                    0 // Return 0 for failed crafting
-                }
+            // Check if crafting is complete
+            if session.steps_completed >= session.total_steps_required {
+                // Complete the craft
+                self._complete_craft(ref world, ref session, nft_contract);
+            } else {
+                // Save progress
+                world.write_model(@session);
             }
         }
 
-        fn get_player_stats(ref self: ContractState) -> (u8, u16, u32, u32, u32, u16) {
-            let mut world = self.world(@"dosis_game");
-            let mut store = StoreTrait::new(world);
-            let caller = get_caller_address();
+        fn cancel_crafting(ref self: ContractState, nft_token_id: u256) {
+            let mut world = self.world(NAMESPACE());
 
-            let player_nft = store.get_player_character_by_owner(caller);
-            PlayerNFTAssert::assert_exists(player_nft);
+            // Get crafting session
+            let mut session: CraftingSession = world.read_model(nft_token_id);
+            session.assert_active();
 
-            (
-                player_nft.level,
-                player_nft.experience,
-                player_nft.total_drugs_created,
-                player_nft.successful_crafts,
-                player_nft.failed_crafts,
-                player_nft.reputation
-            )
+            // Get NFT contract
+            let nft_contract = IDosisNFTDispatcher { contract_address: NFT_CONTRACTS() };
+
+            // Verify ownership
+            let character_stats = nft_contract.get_character_stats(nft_token_id);
+            assert(character_stats.owner == get_caller_address(), Errors::NOT_OWNER);
+
+            // Deactivate session
+            session.is_active = false;
+            world.write_model(@session);
         }
 
-        fn get_drug(ref self: ContractState, drug_id: u32) -> Drug {
-            let mut world = self.world(@"dosis_game");
-            let mut store = StoreTrait::new(world);
-
-            let drug = store.read_drug(drug_id);
-            drug.assert_exists();
-            drug
+        fn get_crafting_session(self: @ContractState, nft_token_id: u256) -> CraftingSession {
+            let world = self.world(NAMESPACE());
+            world.read_model(nft_token_id)
         }
+    }
 
-        fn get_player_drugs(ref self: ContractState) -> Array<u32> {
-            let mut world = self.world(@"dosis_game");
-            let mut store = StoreTrait::new(world);
+    #[generate_trait]
+    impl InternalImpl of InternalTrait {
+        fn _complete_craft(
+            ref self: ContractState,
+            ref world: dojo::world::WorldStorage,
+            ref session: CraftingSession,
+            nft_contract: IDosisNFTDispatcher,
+        ) {
+            let nft_token_id = session.nft_token_id;
+            let character_stats = nft_contract.get_character_stats(nft_token_id);
 
-            store.get_player_drugs()
+            // Calculate crafting success
+            let _success_rate = calculate_success_rate(character_stats.level, 10);
+            let crafting_result = CraftingResult::Success; // TODO: Use simulate_crafting
+
+            match crafting_result {
+                CraftingResult::Success | CraftingResult::CriticalSuccess => {
+                    let purity: u8 = 75;
+                    let rarity = DrugRarity::Base;
+                    let reputation_reward = calculate_reputation_reward(rarity, purity);
+                    let cash_reward = calculate_cash_reward(rarity, purity);
+
+                    // Create drug
+                    nft_contract.mint_drug(
+                        nft_token_id,
+                        session.drug_name.clone(),
+                        rarity,
+                        reputation_reward,
+                        cash_reward
+                    );
+
+                    // Calculate gains
+                    let exp_gain = calculate_experience_gain(100, crafting_result, character_stats.level);
+                    let rep_gain = calculate_reputation_gain(rarity, purity);
+
+                    // Update character stats
+                    nft_contract.update_character_stats(
+                        nft_token_id,
+                        0,
+                        0,
+                        exp_gain,
+                        rep_gain,
+                        true,
+                    );
+                },
+                CraftingResult::Failure | CraftingResult::CriticalFailure => {
+                    nft_contract.update_character_stats(
+                        nft_token_id,
+                        0,
+                        0,
+                        1,
+                        0,
+                        false,
+                    );
+                },
+            };
+
+            // Deactivate session
+            session.is_active = false;
+            world.write_model(@session);
         }
     }
 
     // Helper functions
-
     fn calculate_success_rate(player_level: u8, recipe_difficulty: u8) -> u8 {
-        let base_rate = dosis_game::constants::BASE_SUCCESS_RATE;
+        let base_rate: u8 = 50;
         let level_bonus = player_level * 5;
         let difficulty_penalty = recipe_difficulty * 3;
-        
+
         let rate = base_rate + level_bonus - difficulty_penalty;
-        if rate > dosis_game::constants::MAX_SUCCESS_RATE { 
-            dosis_game::constants::MAX_SUCCESS_RATE 
-        } else if rate < dosis_game::constants::MIN_SUCCESS_RATE { 
-            dosis_game::constants::MIN_SUCCESS_RATE 
-        } else { 
-            rate 
+        if rate > 95 {
+            95
+        } else if rate < 10 {
+            10
+        } else {
+            rate
         }
     }
 
     fn simulate_crafting(success_rate: u8) -> CraftingResult {
-        // Random crafting outcome calculation
         let random_value = get_block_timestamp() % 100;
-        
+
         if random_value < 2 {
             CraftingResult::CriticalFailure
-        } else if random_value < 5 {
+        } else if random_value < 20 {
             CraftingResult::Failure
         } else if random_value < success_rate.into() {
             CraftingResult::Success
-        } else if random_value < (success_rate + 5).into() {
+        } else if random_value >= 95 {
             CraftingResult::CriticalSuccess
         } else {
             CraftingResult::Failure
         }
     }
 
-    fn calculate_purity(result: CraftingResult, difficulty: u8) -> u8 {
-        let base_purity = match result {
-            CraftingResult::CriticalSuccess => 95 + (difficulty * 2),
-            CraftingResult::Success => 70 + difficulty,
-            CraftingResult::Failure => 30 + difficulty,
-            CraftingResult::CriticalFailure => 10,
-        };
-        
-        // Ensure purity is within valid bounds
-        if base_purity > dosis_game::constants::MAX_PURITY {
-            dosis_game::constants::MAX_PURITY
-        } else if base_purity < dosis_game::constants::MIN_PURITY {
-            dosis_game::constants::MIN_PURITY
-        } else {
-            base_purity
-        }
+    fn get_rarity_from_recipe(recipe_rarity: felt252) -> DrugRarity {
+        // Convert felt252 recipe rarity to DrugRarity enum
+        // This is a placeholder - adjust based on your actual rarity encoding
+        DrugRarity::Base
     }
 
-    fn calculate_experience_gain(recipe: Recipe, result: CraftingResult, player_level: u8) -> u16 {
-        let base_exp = recipe.base_experience;
-        let level_penalty = player_level * 2; // Higher level players get less exp
-        
+    fn calculate_reputation_reward(rarity: DrugRarity, purity: u8) -> u32 {
+        let base_reward = match rarity {
+            DrugRarity::Base => 10,
+            DrugRarity::Common => 25,
+            DrugRarity::Rare => 50,
+            DrugRarity::UltraRare => 100,
+            DrugRarity::Legendary => 200,
+        };
+
+        let purity_bonus = (purity / 10).into();
+        base_reward + purity_bonus
+    }
+
+    fn calculate_cash_reward(rarity: DrugRarity, purity: u8) -> u32 {
+        let base_reward = match rarity {
+            DrugRarity::Base => 20,
+            DrugRarity::Common => 50,
+            DrugRarity::Rare => 100,
+            DrugRarity::UltraRare => 200,
+            DrugRarity::Legendary => 500,
+        };
+
+        let purity_bonus = (purity / 5).into();
+        base_reward + purity_bonus
+    }
+
+    fn calculate_experience_gain(base_exp: u16, result: CraftingResult, player_level: u8) -> u16 {
+        let level_penalty = player_level.into() * 2;
+
         match result {
-            CraftingResult::CriticalSuccess => base_exp * 2 - level_penalty.into(),
-            CraftingResult::Success => base_exp - level_penalty.into(),
+            CraftingResult::CriticalSuccess => base_exp * 2 - level_penalty,
+            CraftingResult::Success => base_exp - level_penalty,
             CraftingResult::Failure => base_exp / 4,
             CraftingResult::CriticalFailure => 1,
         }
     }
 
-    fn calculate_reputation_gain(rarity: DrugRarity, purity: u8) -> u8 {
+    fn calculate_reputation_gain(rarity: DrugRarity, purity: u8) -> u16 {
         let rarity_multiplier = match rarity {
-            DrugRarity::Common => dosis_game::constants::COMMON_RARITY_MULTIPLIER,
-            DrugRarity::Uncommon => dosis_game::constants::UNCOMMON_RARITY_MULTIPLIER,
-            DrugRarity::Rare => dosis_game::constants::RARE_RARITY_MULTIPLIER,
-            DrugRarity::Epic => dosis_game::constants::EPIC_RARITY_MULTIPLIER,
-            DrugRarity::Legendary => dosis_game::constants::LEGENDARY_RARITY_MULTIPLIER,
+            DrugRarity::Base => 1,
+            DrugRarity::Common => 2,
+            DrugRarity::Rare => 3,
+            DrugRarity::UltraRare => 5,
+            DrugRarity::Legendary => 10,
         };
-        
-        let purity_bonus = purity / 10; // 0-10 bonus based on purity
-        dosis_game::constants::BASE_REPUTATION_GAIN * rarity_multiplier + purity_bonus
+
+        let purity_bonus = (purity / 10).into();
+        let base_rep: u16 = 5;
+        base_rep * rarity_multiplier + purity_bonus
+    }
+
+    fn calculate_total_steps(
+        base_ingredients: @Array<(u32, u32)>,
+        drug_ingredient_ids: @Array<u32>,
+        player_level: u8,
+    ) -> u32 {
+        // TODO: Implement logic based on:
+        // - Number and quantity of base ingredients
+        // - Number of drug ingredients
+        // - Player level (higher level = fewer steps needed)
+        // - Recipe complexity
+        // For now, return a fixed value
+        100
     }
 }

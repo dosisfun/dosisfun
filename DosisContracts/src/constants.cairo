@@ -1,43 +1,16 @@
-// Starknet import
 use starknet::ContractAddress;
 
-// Zero address for initialization
-pub fn ZERO_ADDRESS() -> ContractAddress {
-    0.try_into().unwrap()
+pub fn NAMESPACE() -> @ByteArray{
+    @"dosis_game4"
 }
 
-// Time constants
-pub const SECONDS_PER_DAY: u64 = 86400;
-pub const SECONDS_PER_HOUR: u64 = 3600;
-pub const SECONDS_PER_MINUTE: u64 = 60;
+pub fn NFT_CONTRACTS() -> ContractAddress {
+    0x02232fb520090d5c76d8d84de9829eea7c34c5e6234a5a2a8b178d18e2aedbd7.try_into().unwrap()
+}
 
-// Player progression constants
-pub const BASE_LEVEL_EXPERIENCE: u16 = 100;
-pub const LEVEL_EXPERIENCE_MULTIPLIER: u16 = 150;
-pub const MAX_PLAYER_LEVEL: u8 = 100;
-
-// Drug crafting constants
-pub const BASE_CRAFTING_EXPERIENCE: u16 = 10;
-pub const MAX_RECIPE_DIFFICULTY: u8 = 10;
-pub const MIN_RECIPE_DIFFICULTY: u8 = 1;
-pub const MAX_PURITY: u8 = 100;
-pub const MIN_PURITY: u8 = 0;
-
-// Success rate constants
-pub const BASE_SUCCESS_RATE: u8 = 50;
-pub const MAX_SUCCESS_RATE: u8 = 95;
-pub const MIN_SUCCESS_RATE: u8 = 5;
-
-// Reputation constants
-pub const BASE_REPUTATION_GAIN: u8 = 1;
-pub const LEVEL_UP_REPUTATION_BONUS: u8 = 10;
-
-// NFT constants
-pub const MAX_PLAYER_NFT_SUPPLY: u256 = 10000;
-
-// Drug rarity multipliers
-pub const COMMON_RARITY_MULTIPLIER: u8 = 1;
-pub const UNCOMMON_RARITY_MULTIPLIER: u8 = 2;
-pub const RARE_RARITY_MULTIPLIER: u8 = 5;
-pub const EPIC_RARITY_MULTIPLIER: u8 = 10;
-pub const LEGENDARY_RARITY_MULTIPLIER: u8 = 25;
+// Ingredient IDs
+pub const INGREDIENT_RUCUCU_OG: u32 = 1;
+pub const INGREDIENT_OG_KUSH: u32 = 2;
+pub const INGREDIENT_PINEAPPLE_EXPRESS: u32 = 3;
+pub const INGREDIENT_GELATO: u32 = 4;
+pub const INGREDIENT_BLUE_DREAM: u32 = 5;

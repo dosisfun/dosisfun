@@ -3,22 +3,16 @@ name = "Dosis"
 description = "Dosis Game."
 seed = "dosis_game"
 
-[world.socials]
-x = ""
-github = ""
-# discord = ""
-# telegram = ""
-
 [namespace]
-default = "dosis_game"
+default = "dosis_game4"
 
 [env]
-chain_id = "SN_SEPOLIA"
 rpc_url = "https://api.cartridge.gg/x/starknet/sepolia"
-# account_address = ""  # env: DOJO_ACCOUNT_ADDRESS
-# private_key = ""      # env: DOJO_PRIVATE_KEY
-world_address = ""
-world_block = 0
+account_address = "0x00dba4d5ba495338b74aceac92ddc26afff9319d675e09db0aadba40cc606245"
+private_key = "0x06c3f4d5e62d4b873a1389cec6671a9ef3414af6321d893bdf3967bc9c77fa47"
 
 [writers]
-"dosis_game" = ["dosis_game-game"]
+"dosis_game4" = [
+    "dosis_game4-black_market_system",
+    "dosis_game4-drug_crafting_system"
+]
