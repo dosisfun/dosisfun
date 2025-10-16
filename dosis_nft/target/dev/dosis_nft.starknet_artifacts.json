@@ -1,0 +1,1 @@
+{"version":1,"contracts":[{"id":"e4e97ihcahuc6","package_name":"dosis_nft","contract_name":"DosisNFTContract","module_path":"dosis_nft::contract::DosisNFTContract","artifacts":{"sierra":"dosis_nft_DosisNFTContract.contract_class.json","casm":null}}]}

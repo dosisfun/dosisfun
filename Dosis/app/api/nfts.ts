@@ -41,7 +41,11 @@ export async function fetchNFTsByAddresses(addresses: string[]): Promise<DosisNF
         );
 
         if (!balanceResponse.ok) {
-          console.error(`Error fetching balance for ${address}:`, balanceResponse.status);
+          if (balanceResponse.status === 404) {
+            console.log(`No NFTs found for address ${address}`);
+          } else {
+            console.error(`Error fetching balance for ${address}:`, balanceResponse.status);
+          }
           continue;
         }
 

@@ -7,7 +7,10 @@ import { VoyagerNFTDetailResponse } from '../../types/character-state';
 import { DOSIS_NFT_ADDRESS, VOYAGER_BASE_URL } from '../../constants/contracts';
 
 const REQUEST_TIMEOUT = 10000; // 10 seconds
-const VOYAGER_NFT_BASE_URL = VOYAGER_BASE_URL.replace('/api', '');
+
+// Ensure VOYAGER_BASE_URL is defined and has a fallback
+const baseUrl = VOYAGER_BASE_URL || 'https://sepolia.voyager.online/api';
+const VOYAGER_NFT_BASE_URL = baseUrl.replace('/api', '');
 
 /**
  * Fetch detailed NFT data including character attributes from Voyager API

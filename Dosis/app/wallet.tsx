@@ -3,6 +3,7 @@ import { Button } from "@react-navigation/elements";
 import { useState } from "react";
 import { useAegis } from "@cavos/aegis"
 import { router } from "expo-router";
+import { diagnoseWalletState, testSimpleTransaction } from "@/utils/diagnosticUtils";
 
 export default function WalletPage() {
   const { aegisAccount, isConnected, currentAddress, error } = useAegis();
@@ -45,6 +46,33 @@ export default function WalletPage() {
 
     } catch (error) {
       Alert.alert("Error", "Transaction failed");
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
+  const runDiagnostics = async () => {
+    if (!isConnected || !aegisAccount) {
+      Alert.alert("Error", "No wallet connected");
+      return;
+    }
+
+    try {
+      setIsExecuting(true);
+      
+      console.log('Running wallet diagnostics...');
+      await diagnoseWalletState(aegisAccount);
+      
+      console.log('Testing simple transaction...');
+      const testResult = await testSimpleTransaction(aegisAccount);
+      
+      Alert.alert(
+        "Diagnostics Complete", 
+        `Check console for details.\nSimple transaction: ${testResult ? 'SUCCESS' : 'FAILED'}`
+      );
+      
+    } catch (error) {
+      Alert.alert("Diagnostic Error", `Failed to run diagnostics: ${error}`);
     } finally {
       setIsExecuting(false);
     }
@@ -103,12 +131,31 @@ export default function WalletPage() {
 
       <Button
         variant="filled"
+        color="#FF6B35"
+        onPress={runDiagnostics}
+        disabled={isExecuting}
+        style={{ marginVertical: 5 }}
+      >
+        {isExecuting ? "Running..." : "🔍 Run Diagnostics"}
+      </Button>
+
+      <Button
+        variant="filled"
         color="#ffc107"
         onPress={executeTestTransaction}
         disabled={isExecuting}
         style={{ marginVertical: 5 }}
       >
         {isExecuting ? "Executing..." : "Execute Test Transaction"}
+      </Button>
+
+      <Button
+        variant="filled"
+        color="#007AFF"
+        onPress={() => router.push("/game-menu")}
+        style={{ marginVertical: 5 }}
+      >
+        🎮 Go to Game Menu
       </Button>
 
       <Button

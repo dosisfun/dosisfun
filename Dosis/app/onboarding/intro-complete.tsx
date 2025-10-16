@@ -229,18 +229,18 @@ export default function IntroComplete() {
           useNativeDriver: true,
         }).start();
       } else {
-        router.replace('/wallet');
+        router.replace('/game-menu');
       }
     }
   };
 
   const getRequiredTaps = (stage: number) => {
     switch (stage) {
-      case 1: return 100; // weed1 → weed2
-      case 2: return 200; // weed2 → weed3
-      case 3: return 300; // weed3 → weed4
-      case 4: return 500; // weed4 → final
-      default: return 100;
+      case 1: return 1; // weed1 → weed2
+      case 2: return 2; // weed2 → weed3
+      case 3: return 3; // weed3 → weed4
+      case 4: return 5; // weed4 → final
+      default: return 1;
     }
   };
 
